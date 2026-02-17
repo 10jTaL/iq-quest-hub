@@ -7,6 +7,7 @@ export const mockQuizzes: Quiz[] = [
     title: "Cybersécurité : les fondamentaux",
     description: "Testez vos connaissances sur les bases de la cybersécurité en entreprise.",
     icon: "🛡️",
+    iconColor: "blue",
     questionCount: 5,
     introduction: "Ce quiz vous permettra d'évaluer votre niveau de connaissance en matière de cybersécurité. Les questions portent sur les bonnes pratiques, les menaces courantes et les mesures de protection essentielles.",
     questions: [
@@ -78,6 +79,7 @@ export const mockQuizzes: Quiz[] = [
     title: "RGPD : l'essentiel",
     description: "Vérifiez votre compréhension du Règlement Général sur la Protection des Données.",
     icon: "📋",
+    iconColor: "orange",
     questionCount: 4,
     introduction: "Le RGPD est entré en vigueur en mai 2018. Ce quiz évalue votre compréhension des principes fondamentaux et des obligations qu'il impose aux organisations.",
     questions: [
@@ -138,6 +140,7 @@ export const mockQuizzes: Quiz[] = [
     title: "IA Générative : les bases",
     description: "Explorez vos connaissances sur l'intelligence artificielle générative et ses applications.",
     icon: "🤖",
+    iconColor: "purple",
     questionCount: 4,
     introduction: "L'IA générative révolutionne de nombreux secteurs. Ce quiz teste vos connaissances sur les concepts clés, les outils et les enjeux de cette technologie.",
     questions: [

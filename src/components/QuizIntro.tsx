@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Clock, HelpCircle } from "lucide-react";
 
 interface QuizIntroProps {
   title: string;
@@ -16,29 +17,35 @@ const QuizIntro = ({ title, introduction, questionCount, icon, onStart }: QuizIn
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.5 }}
-      className="mx-auto max-w-2xl text-center"
+      className="mx-auto max-w-xl text-center"
     >
       <motion.div
         initial={{ scale: 0.5, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
-        className="mb-6 text-6xl"
+        className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-accent text-5xl"
       >
         {icon}
       </motion.div>
 
-      <h1 className="mb-4 font-heading text-3xl font-bold text-foreground md:text-4xl">
+      <h1 className="mb-3 font-heading text-2xl font-bold text-foreground md:text-3xl">
         {title}
       </h1>
 
-      <p className="mb-8 text-muted-foreground leading-relaxed text-lg">
+      <p className="mb-8 text-muted-foreground leading-relaxed">
         {introduction}
       </p>
 
-      <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 text-sm text-secondary-foreground">
-        <span>{questionCount} questions</span>
-        <span className="text-muted-foreground">•</span>
-        <span>~{Math.ceil(questionCount * 1.5)} min</span>
+      <div className="mb-8 inline-flex items-center gap-4 rounded-xl border border-border bg-card px-5 py-3 text-sm text-muted-foreground">
+        <span className="flex items-center gap-1.5">
+          <HelpCircle className="h-4 w-4" />
+          {questionCount} questions
+        </span>
+        <span className="h-4 w-px bg-border" />
+        <span className="flex items-center gap-1.5">
+          <Clock className="h-4 w-4" />
+          ~{Math.ceil(questionCount * 1.5)} min
+        </span>
       </div>
 
       <div>

@@ -29,7 +29,7 @@ const QuizResults = ({ score, totalQuestions, resultMessages, onRestart }: QuizR
         initial={{ scale: 0 }}
         animate={{ scale: 1 }}
         transition={{ delay: 0.2, type: "spring", stiffness: 150 }}
-        className="mx-auto mb-8 flex h-36 w-36 items-center justify-center rounded-full border-4 border-primary animate-pulse-glow"
+        className="mx-auto mb-8 flex h-36 w-36 items-center justify-center rounded-full border-4 border-primary/20 bg-accent"
       >
         <div>
           <div className="font-heading text-4xl font-bold text-primary">{percentage}%</div>

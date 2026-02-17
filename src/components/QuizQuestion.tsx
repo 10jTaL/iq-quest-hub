@@ -46,9 +46,10 @@ const QuizQuestion = ({ question, questionNumber, totalQuestions, onAnswer, onNe
           <span>Question {questionNumber}/{totalQuestions}</span>
           <span>{Math.round((questionNumber / totalQuestions) * 100)}%</span>
         </div>
-        <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
+        <div className="h-2 rounded-full bg-secondary overflow-hidden">
           <motion.div
-            className="h-full rounded-full bg-primary"
+            className="h-full rounded-full"
+            style={{ background: "var(--gradient-primary)" }}
             initial={{ width: `${((questionNumber - 1) / totalQuestions) * 100}%` }}
             animate={{ width: `${(questionNumber / totalQuestions) * 100}%` }}
             transition={{ duration: 0.5 }}
@@ -93,7 +94,7 @@ const QuizQuestion = ({ question, questionNumber, totalQuestions, onAnswer, onNe
               transition={{ delay: i * 0.08 }}
               disabled={hasValidated}
               onClick={() => setSelectedAnswer(answer.id)}
-              className={`flex w-full items-center gap-3 rounded-lg border ${borderClass} ${bgClass} p-4 text-left transition-all duration-200`}
+              className={`flex w-full items-center gap-3 rounded-xl border ${borderClass} ${bgClass} p-4 text-left transition-all duration-200`}
             >
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-secondary text-sm font-medium text-secondary-foreground">
                 {String.fromCharCode(65 + i)}
@@ -115,7 +116,7 @@ const QuizQuestion = ({ question, questionNumber, totalQuestions, onAnswer, onNe
             transition={{ duration: 0.3 }}
             className="mb-8 overflow-hidden"
           >
-            <div className="rounded-lg border border-border bg-secondary/50 p-4">
+            <div className="rounded-xl border border-border bg-accent/50 p-4">
               <p className="text-sm font-medium text-foreground mb-1">Explication</p>
               <p className="text-sm text-muted-foreground leading-relaxed">
                 {question.explanation}
