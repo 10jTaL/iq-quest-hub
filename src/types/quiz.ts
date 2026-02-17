@@ -17,6 +17,7 @@ export interface Quiz {
   title: string;
   description: string;
   icon: string;
+  iconColor?: "blue" | "orange" | "red" | "green" | "purple" | "teal";
   questionCount: number;
   introduction: string;
   questions: QuizQuestion[];
