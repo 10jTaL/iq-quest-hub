@@ -2,9 +2,13 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import QuizCard from "@/components/QuizCard";
 import { mockQuizzes } from "@/data/mockQuizzes";
-import { Settings } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
+  const { user, logout } = useAuth();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -13,13 +17,19 @@ const Index = () => {
           <Link to="/" className="font-heading text-lg font-bold text-foreground">
             QuizAI<span className="text-primary">.</span>
           </Link>
-          <Link
-            to="/admin"
-            className="flex items-center gap-2 rounded-full border border-border px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
-          >
-            <Settings className="h-3.5 w-3.5" />
-            Administration
-          </Link>
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">{user?.name}</span>
+            <Link
+              to="/admin"
+              className="flex items-center gap-2 rounded-full border border-border px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
+            >
+              <Settings className="h-3.5 w-3.5" />
+              Administration
+            </Link>
+            <Button variant="ghost" size="icon" onClick={logout} className="h-9 w-9 text-muted-foreground hover:text-foreground">
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </header>
 
