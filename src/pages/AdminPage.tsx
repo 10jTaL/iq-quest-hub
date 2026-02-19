@@ -19,11 +19,17 @@ const defaultResultMessages: ResultMessage[] = [
 const AdminPage = () => {
   const [configs, setConfigs] = useState<QuizConfig[]>([]);
   const [editing, setEditing] = useState<QuizConfig | null>(null);
-  const [siteConfig, setSiteConfig] = useState<SiteConfig>({
-    webhookUrl: "",
-    apiKey: "",
-    maxApiRetries: 3,
-    roleUsers: [],
+  const [siteConfig, setSiteConfig] = useState<SiteConfig>(() => {
+    try {
+      const stored = localStorage.getItem("siteConfig");
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return {
+      webhookUrl: "",
+      apiKey: "",
+      maxApiRetries: 3,
+      roleUsers: [],
+    };
   });
   const [newRoleEmail, setNewRoleEmail] = useState("");
   const [newRoleName, setNewRoleName] = useState("");
@@ -76,6 +82,7 @@ const AdminPage = () => {
       toast.error("L'URL du webhook est requise.");
       return;
     }
+    localStorage.setItem("siteConfig", JSON.stringify(siteConfig));
     toast.success("Paramètres du site sauvegardés.");
   };
 

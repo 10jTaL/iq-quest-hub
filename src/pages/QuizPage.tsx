@@ -5,7 +5,24 @@ import { mockQuizzes } from "@/data/mockQuizzes";
 import QuizIntro from "@/components/QuizIntro";
 import QuizQuestion from "@/components/QuizQuestion";
 import QuizResults from "@/components/QuizResults";
-import { ArrowLeft } from "lucide-react";
+import QuizStats from "@/components/QuizStats";
+import { ArrowLeft, BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { SiteConfig } from "@/types/quiz";
+
+const isPrivilegedUser = (): boolean => {
+  try {
+    const stored = localStorage.getItem("siteConfig");
+    if (!stored) return false;
+    const config: SiteConfig = JSON.parse(stored);
+    // For demo: check if any role user is admin or maitre_du_jeu
+    return config.roleUsers.some(
+      (u) => u.role === "administrateur" || u.role === "maitre_du_jeu"
+    );
+  } catch {
+    return false;
+  }
+};
 
 type Phase = "intro" | "questions" | "results";
 
@@ -16,6 +33,8 @@ const QuizPage = () => {
   const [phase, setPhase] = useState<Phase>("intro");
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
+  const [showStats, setShowStats] = useState(false);
+  const canViewStats = isPrivilegedUser();
 
   if (!quiz) {
     return (
@@ -52,11 +71,22 @@ const QuizPage = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card">
-        <div className="container flex h-16 items-center">
+        <div className="container flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="h-4 w-4" />
             Retour
           </Link>
+          {canViewStats && (
+            <Button
+              variant={showStats ? "default" : "outline"}
+              size="sm"
+              className="gap-2 rounded-full"
+              onClick={() => setShowStats((s) => !s)}
+            >
+              <BarChart3 className="h-4 w-4" />
+              Statistiques
+            </Button>
+          )}
         </div>
       </header>
 
@@ -92,6 +122,13 @@ const QuizPage = () => {
             />
           )}
         </AnimatePresence>
+
+        {/* Stats panel for privileged users */}
+        {canViewStats && showStats && slug && (
+          <div className="mt-12 border-t border-border pt-10">
+            <QuizStats quizSlug={slug} />
+          </div>
+        )}
       </main>
     </div>
   );
