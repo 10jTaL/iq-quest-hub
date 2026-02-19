@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Trash2, Save, Webhook, Key, FileText, Settings, BookOpen } from "lucide-react";
-import { QuizConfig, SiteConfig, ResultMessage } from "@/types/quiz";
+import { ArrowLeft, Plus, Trash2, Save, Webhook, Key, FileText, Settings, BookOpen, Shield, Users, Crown } from "lucide-react";
+import { QuizConfig, SiteConfig, ResultMessage, RoleUser, UserRole } from "@/types/quiz";
 import { toast } from "sonner";
 
 const defaultResultMessages: ResultMessage[] = [
@@ -23,7 +23,11 @@ const AdminPage = () => {
     webhookUrl: "",
     apiKey: "",
     maxApiRetries: 3,
+    roleUsers: [],
   });
+  const [newRoleEmail, setNewRoleEmail] = useState("");
+  const [newRoleName, setNewRoleName] = useState("");
+  const [newRole, setNewRole] = useState<UserRole>("maitre_du_jeu");
 
   const createNew = () => {
     const newConfig: QuizConfig = {
@@ -80,6 +84,48 @@ const AdminPage = () => {
     const updated = [...editing.resultMessages];
     updated[index] = { ...updated[index], [field]: value };
     setEditing({ ...editing, resultMessages: updated });
+  };
+
+  const addRoleUser = () => {
+    if (!newRoleEmail || !newRoleName) {
+      toast.error("L'email et le nom sont requis.");
+      return;
+    }
+    const newUser: RoleUser = {
+      id: Date.now().toString(),
+      email: newRoleEmail,
+      name: newRoleName,
+      role: newRole,
+    };
+    setSiteConfig((prev) => ({
+      ...prev,
+      roleUsers: [...prev.roleUsers, newUser],
+    }));
+    setNewRoleEmail("");
+    setNewRoleName("");
+    setNewRole("maitre_du_jeu");
+    toast.success("Utilisateur ajouté.");
+  };
+
+  const removeRoleUser = (id: string) => {
+    setSiteConfig((prev) => ({
+      ...prev,
+      roleUsers: prev.roleUsers.filter((u) => u.id !== id),
+    }));
+    toast.success("Utilisateur supprimé.");
+  };
+
+  const updateRoleUser = (id: string, role: UserRole) => {
+    setSiteConfig((prev) => ({
+      ...prev,
+      roleUsers: prev.roleUsers.map((u) => (u.id === id ? { ...u, role } : u)),
+    }));
+  };
+
+  const roleLabels: Record<UserRole, { label: string; icon: React.ReactNode; color: string }> = {
+    administrateur: { label: "Administrateur", icon: <Crown className="h-4 w-4" />, color: "text-destructive" },
+    maitre_du_jeu: { label: "Maître du jeu", icon: <Shield className="h-4 w-4" />, color: "text-primary" },
+    user: { label: "Utilisateur", icon: <Users className="h-4 w-4" />, color: "text-muted-foreground" },
   };
 
   return (
@@ -320,6 +366,117 @@ const AdminPage = () => {
                         value={siteConfig.maxApiRetries}
                         onChange={(e) => setSiteConfig({ ...siteConfig, maxApiRetries: parseInt(e.target.value) || 3 })}
                       />
+                    </div>
+                  </section>
+
+                  {/* Gestion des rôles */}
+                  <section className="rounded-xl border border-border bg-card p-6 space-y-4">
+                    <h2 className="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
+                      <Shield className="h-5 w-5 text-primary" />
+                      Gestion des rôles
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Par défaut, chaque personne est un <strong>Utilisateur</strong>. Ajoutez des rôles spécifiques ci-dessous.
+                    </p>
+
+                    {/* Rôles existants */}
+                    <div className="space-y-2">
+                      {siteConfig.roleUsers.length === 0 ? (
+                        <div className="rounded-lg border border-dashed border-border p-6 text-center">
+                          <Users className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
+                          <p className="text-sm text-muted-foreground">Aucun rôle spécifique attribué.</p>
+                        </div>
+                      ) : (
+                        siteConfig.roleUsers.map((user) => (
+                          <div
+                            key={user.id}
+                            className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 p-3"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className={roleLabels[user.role].color}>
+                                {roleLabels[user.role].icon}
+                              </span>
+                              <div>
+                                <p className="text-sm font-medium text-foreground">{user.name}</p>
+                                <p className="text-xs text-muted-foreground">{user.email}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <select
+                                value={user.role}
+                                onChange={(e) => updateRoleUser(user.id, e.target.value as UserRole)}
+                                className="rounded-md border border-input bg-background px-2 py-1 text-sm"
+                              >
+                                <option value="administrateur">Administrateur</option>
+                                <option value="maitre_du_jeu">Maître du jeu</option>
+                                <option value="user">Utilisateur</option>
+                              </select>
+                              <Button variant="outline" size="sm" onClick={() => removeRoleUser(user.id)}>
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Ajouter un rôle */}
+                    <div className="rounded-lg border border-border bg-secondary/20 p-4 space-y-3">
+                      <h3 className="text-sm font-semibold text-foreground">Ajouter un utilisateur</h3>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div>
+                          <Label>Nom</Label>
+                          <Input
+                            value={newRoleName}
+                            onChange={(e) => setNewRoleName(e.target.value)}
+                            placeholder="Jean Dupont"
+                          />
+                        </div>
+                        <div>
+                          <Label>Email</Label>
+                          <Input
+                            value={newRoleEmail}
+                            onChange={(e) => setNewRoleEmail(e.target.value)}
+                            placeholder="jean@exemple.com"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-end gap-3">
+                        <div className="flex-1">
+                          <Label>Rôle</Label>
+                          <select
+                            value={newRole}
+                            onChange={(e) => setNewRole(e.target.value as UserRole)}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                          >
+                            <option value="administrateur">Administrateur</option>
+                            <option value="maitre_du_jeu">Maître du jeu</option>
+                          </select>
+                        </div>
+                        <Button onClick={addRoleUser} className="gap-2">
+                          <Plus className="h-4 w-4" />
+                          Ajouter
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Légende des rôles */}
+                    <div className="rounded-lg bg-accent/50 p-4 space-y-2">
+                      <h3 className="text-sm font-semibold text-foreground">Descriptif des rôles</h3>
+                      <div className="space-y-1 text-sm text-muted-foreground">
+                        <p className="flex items-center gap-2">
+                          <Crown className="h-3.5 w-3.5 text-destructive" />
+                          <strong>Administrateur :</strong> Accès complet à tout le site
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <Shield className="h-3.5 w-3.5 text-primary" />
+                          <strong>Maître du jeu :</strong> Création de quiz et gestion des questions
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                          <strong>Utilisateur :</strong> Rôle par défaut, accès aux quiz uniquement
+                        </p>
+                      </div>
                     </div>
                   </section>
 

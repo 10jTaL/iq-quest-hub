@@ -43,8 +43,18 @@ export interface QuizConfig {
   resultMessages: ResultMessage[];
 }
 
+export type UserRole = "user" | "maitre_du_jeu" | "administrateur";
+
+export interface RoleUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+}
+
 export interface SiteConfig {
   webhookUrl: string;
   apiKey: string;
   maxApiRetries: number;
+  roleUsers: RoleUser[];
 }
