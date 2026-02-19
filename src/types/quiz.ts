@@ -38,10 +38,13 @@ export interface QuizConfig {
   description: string;
   introduction: string;
   icon: string;
-  webhookUrl: string;
-  apiKey: string;
   sourceDocument: string;
   questionCount: number;
-  maxApiRetries: number;
   resultMessages: ResultMessage[];
+}
+
+export interface SiteConfig {
+  webhookUrl: string;
+  apiKey: string;
+  maxApiRetries: number;
 }
