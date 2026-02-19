@@ -8,17 +8,14 @@ import QuizResults from "@/components/QuizResults";
 import QuizStats from "@/components/QuizStats";
 import { ArrowLeft, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SiteConfig } from "@/types/quiz";
+import { useAuth } from "@/contexts/AuthContext";
 
 const isPrivilegedUser = (): boolean => {
   try {
-    const stored = localStorage.getItem("siteConfig");
+    const stored = localStorage.getItem("authUser");
     if (!stored) return false;
-    const config: SiteConfig = JSON.parse(stored);
-    // For demo: check if any role user is admin or maitre_du_jeu
-    return config.roleUsers.some(
-      (u) => u.role === "administrateur" || u.role === "maitre_du_jeu"
-    );
+    const user = JSON.parse(stored);
+    return user.role === "administrateur" || user.role === "maitre_du_jeu";
   } catch {
     return false;
   }
