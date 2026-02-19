@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Plus, Trash2, Save, Webhook, Key, FileText, Settings } from "lucide-react";
-import { QuizConfig, ResultMessage } from "@/types/quiz";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, Plus, Trash2, Save, Webhook, Key, FileText, Settings, BookOpen } from "lucide-react";
+import { QuizConfig, SiteConfig, ResultMessage } from "@/types/quiz";
 import { toast } from "sonner";
 
 const defaultResultMessages: ResultMessage[] = [
@@ -18,6 +19,11 @@ const defaultResultMessages: ResultMessage[] = [
 const AdminPage = () => {
   const [configs, setConfigs] = useState<QuizConfig[]>([]);
   const [editing, setEditing] = useState<QuizConfig | null>(null);
+  const [siteConfig, setSiteConfig] = useState<SiteConfig>({
+    webhookUrl: "",
+    apiKey: "",
+    maxApiRetries: 3,
+  });
 
   const createNew = () => {
     const newConfig: QuizConfig = {
@@ -27,11 +33,8 @@ const AdminPage = () => {
       description: "",
       introduction: "",
       icon: "📝",
-      webhookUrl: "",
-      apiKey: "",
       sourceDocument: "",
       questionCount: 10,
-      maxApiRetries: 3,
       resultMessages: [...defaultResultMessages],
     };
     setEditing(newConfig);
@@ -39,8 +42,8 @@ const AdminPage = () => {
 
   const handleSave = () => {
     if (!editing) return;
-    if (!editing.title || !editing.webhookUrl) {
-      toast.error("Le titre et le webhook sont requis.");
+    if (!editing.title) {
+      toast.error("Le titre est requis.");
       return;
     }
     const slug = editing.title
@@ -62,6 +65,14 @@ const AdminPage = () => {
   const handleDelete = (id: string) => {
     setConfigs((prev) => prev.filter((c) => c.id !== id));
     toast.success("Quiz supprimé.");
+  };
+
+  const handleSaveSiteConfig = () => {
+    if (!siteConfig.webhookUrl) {
+      toast.error("L'URL du webhook est requise.");
+      return;
+    }
+    toast.success("Paramètres du site sauvegardés.");
   };
 
   const updateResultMessage = (index: number, field: keyof ResultMessage, value: string | number) => {
@@ -86,48 +97,7 @@ const AdminPage = () => {
       </header>
 
       <main className="container py-10">
-        {!editing ? (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <div className="mb-8 flex items-center justify-between">
-              <h1 className="font-heading text-2xl font-bold text-foreground">Mes Quiz</h1>
-              <Button onClick={createNew} className="gap-2 rounded-full">
-                <Plus className="h-4 w-4" />
-                Nouveau quiz
-              </Button>
-            </div>
-
-            {configs.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border p-16 text-center">
-                <Settings className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
-                <p className="text-muted-foreground">Aucun quiz configuré. Créez votre premier quiz pour commencer.</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {configs.map((config) => (
-                  <div
-                    key={config.id}
-                    className="flex items-center justify-between rounded-lg border border-border bg-card p-4"
-                  >
-                    <div>
-                      <h3 className="font-heading font-semibold text-foreground">
-                        {config.icon} {config.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">{config.questionCount} questions • {config.webhookUrl ? "Webhook configuré" : "Webhook manquant"}</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => setEditing(config)}>
-                        Modifier
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => handleDelete(config.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </motion.div>
-        ) : (
+        {editing ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto max-w-2xl">
             <div className="mb-8 flex items-center justify-between">
               <h1 className="font-heading text-2xl font-bold text-foreground">
@@ -137,7 +107,7 @@ const AdminPage = () => {
             </div>
 
             <div className="space-y-8">
-              {/* General */}
+              {/* Informations générales */}
               <section className="rounded-xl border border-border bg-card p-6 space-y-4">
                 <h2 className="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
                   <FileText className="h-5 w-5 text-primary" />
@@ -180,29 +150,12 @@ const AdminPage = () => {
                 </div>
               </section>
 
-              {/* API / n8n */}
+              {/* Paramétrage du quiz */}
               <section className="rounded-xl border border-border bg-card p-6 space-y-4">
                 <h2 className="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
-                  <Webhook className="h-5 w-5 text-primary" />
-                  Configuration n8n / Agent IA
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  Paramétrage du quiz
                 </h2>
-                <div>
-                  <Label>URL du Webhook n8n</Label>
-                  <Input
-                    value={editing.webhookUrl}
-                    onChange={(e) => setEditing({ ...editing, webhookUrl: e.target.value })}
-                    placeholder="https://votre-instance.n8n.cloud/webhook/..."
-                  />
-                </div>
-                <div>
-                  <Label>Clé API (optionnel)</Label>
-                  <Input
-                    value={editing.apiKey}
-                    onChange={(e) => setEditing({ ...editing, apiKey: e.target.value })}
-                    placeholder="Bearer token ou clé d'authentification"
-                    type="password"
-                  />
-                </div>
                 <div>
                   <Label>Document source / Base de connaissance</Label>
                   <Textarea
@@ -212,31 +165,19 @@ const AdminPage = () => {
                     rows={3}
                   />
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label>Nombre de questions</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={50}
-                      value={editing.questionCount}
-                      onChange={(e) => setEditing({ ...editing, questionCount: parseInt(e.target.value) || 10 })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Tentatives max (appels API)</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={10}
-                      value={editing.maxApiRetries}
-                      onChange={(e) => setEditing({ ...editing, maxApiRetries: parseInt(e.target.value) || 3 })}
-                    />
-                  </div>
+                <div className="max-w-xs">
+                  <Label>Nombre de questions</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={editing.questionCount}
+                    onChange={(e) => setEditing({ ...editing, questionCount: parseInt(e.target.value) || 10 })}
+                  />
                 </div>
               </section>
 
-              {/* Result messages */}
+              {/* Messages de résultats */}
               <section className="rounded-xl border border-border bg-card p-6 space-y-4">
                 <h2 className="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
                   <Key className="h-5 w-5 text-primary" />
@@ -248,9 +189,7 @@ const AdminPage = () => {
                       <div>
                         <Label>Score min (%)</Label>
                         <Input
-                          type="number"
-                          min={0}
-                          max={100}
+                          type="number" min={0} max={100}
                           value={rm.minScore}
                           onChange={(e) => updateResultMessage(i, "minScore", parseInt(e.target.value) || 0)}
                         />
@@ -258,9 +197,7 @@ const AdminPage = () => {
                       <div>
                         <Label>Score max (%)</Label>
                         <Input
-                          type="number"
-                          min={0}
-                          max={100}
+                          type="number" min={0} max={100}
                           value={rm.maxScore}
                           onChange={(e) => updateResultMessage(i, "maxScore", parseInt(e.target.value) || 100)}
                         />
@@ -291,6 +228,109 @@ const AdminPage = () => {
               </Button>
             </div>
           </motion.div>
+        ) : (
+          <Tabs defaultValue="quizzes" className="w-full">
+            <TabsList className="mb-8">
+              <TabsTrigger value="quizzes" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Création de quiz
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="gap-2">
+                <Settings className="h-4 w-4" />
+                Paramètres du site
+              </TabsTrigger>
+            </TabsList>
+
+            {/* === Onglet Création de quiz === */}
+            <TabsContent value="quizzes">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <div className="mb-8 flex items-center justify-between">
+                  <h1 className="font-heading text-2xl font-bold text-foreground">Mes Quiz</h1>
+                  <Button onClick={createNew} className="gap-2 rounded-full">
+                    <Plus className="h-4 w-4" />
+                    Nouveau quiz
+                  </Button>
+                </div>
+
+                {configs.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border p-16 text-center">
+                    <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
+                    <p className="text-muted-foreground">Aucun quiz configuré. Créez votre premier quiz pour commencer.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {configs.map((config) => (
+                      <div
+                        key={config.id}
+                        className="flex items-center justify-between rounded-lg border border-border bg-card p-4"
+                      >
+                        <div>
+                          <h3 className="font-heading font-semibold text-foreground">
+                            {config.icon} {config.title}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">{config.questionCount} questions</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setEditing(config)}>
+                            Modifier
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleDelete(config.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </motion.div>
+            </TabsContent>
+
+            {/* === Onglet Paramètres du site === */}
+            <TabsContent value="settings">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto max-w-2xl">
+                <h1 className="font-heading text-2xl font-bold text-foreground mb-8">Paramètres du site</h1>
+
+                <div className="space-y-8">
+                  <section className="rounded-xl border border-border bg-card p-6 space-y-4">
+                    <h2 className="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
+                      <Webhook className="h-5 w-5 text-primary" />
+                      Configuration n8n / Agent IA
+                    </h2>
+                    <div>
+                      <Label>URL du Webhook n8n</Label>
+                      <Input
+                        value={siteConfig.webhookUrl}
+                        onChange={(e) => setSiteConfig({ ...siteConfig, webhookUrl: e.target.value })}
+                        placeholder="https://votre-instance.n8n.cloud/webhook/..."
+                      />
+                    </div>
+                    <div>
+                      <Label>Clé API (optionnel)</Label>
+                      <Input
+                        value={siteConfig.apiKey}
+                        onChange={(e) => setSiteConfig({ ...siteConfig, apiKey: e.target.value })}
+                        placeholder="Bearer token ou clé d'authentification"
+                        type="password"
+                      />
+                    </div>
+                    <div className="max-w-xs">
+                      <Label>Tentatives max (appels API)</Label>
+                      <Input
+                        type="number" min={1} max={10}
+                        value={siteConfig.maxApiRetries}
+                        onChange={(e) => setSiteConfig({ ...siteConfig, maxApiRetries: parseInt(e.target.value) || 3 })}
+                      />
+                    </div>
+                  </section>
+
+                  <Button onClick={handleSaveSiteConfig} size="lg" className="w-full gap-2 rounded-full">
+                    <Save className="h-4 w-4" />
+                    Sauvegarder les paramètres
+                  </Button>
+                </div>
+              </motion.div>
+            </TabsContent>
+          </Tabs>
         )}
       </main>
     </div>
