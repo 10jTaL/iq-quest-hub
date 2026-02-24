@@ -476,50 +476,7 @@ const AdminPage = () => {
                 </AlertDialog>
               </section>
 
-              {/* Messages de résultats */}
-              <section className="rounded-xl border border-border bg-card p-6 space-y-4">
-                <h2 className="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
-                  <Key className="h-5 w-5 text-primary" />
-                  Messages de résultats
-                </h2>
-                {editing.resultMessages.map((rm, i) => (
-                  <div key={i} className="rounded-lg border border-border bg-secondary/30 p-4 space-y-3">
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      <div>
-                        <Label>Score min (%)</Label>
-                        <Input
-                          type="number" min={0} max={100}
-                          value={rm.minScore}
-                          onChange={(e) => updateResultMessage(i, "minScore", parseInt(e.target.value) || 0)}
-                        />
-                      </div>
-                      <div>
-                        <Label>Score max (%)</Label>
-                        <Input
-                          type="number" min={0} max={100}
-                          value={rm.maxScore}
-                          onChange={(e) => updateResultMessage(i, "maxScore", parseInt(e.target.value) || 100)}
-                        />
-                      </div>
-                      <div>
-                        <Label>Titre</Label>
-                        <Input
-                          value={rm.title}
-                          onChange={(e) => updateResultMessage(i, "title", e.target.value)}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Message</Label>
-                      <Textarea
-                        value={rm.message}
-                        onChange={(e) => updateResultMessage(i, "message", e.target.value)}
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </section>
+
 
               <Button onClick={handleSave} size="lg" className="w-full gap-2 rounded-full">
                 <Save className="h-4 w-4" />
