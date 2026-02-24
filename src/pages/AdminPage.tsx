@@ -39,6 +39,109 @@ const AdminPage = () => {
     (c) => c.createdBy === user?.email || user?.role === "administrateur"
   );
 
+  const sampleQuestions = [
+    {
+      id: "sq1", question: "Qu'est-ce qu'un algorithme ?", isActive: true,
+      answers: [
+        { id: "a1", text: "Un langage de programmation", isCorrect: false, isActive: true },
+        { id: "a2", text: "Une suite d'instructions pour résoudre un problème", isCorrect: true, isActive: true },
+        { id: "a3", text: "Un composant matériel", isCorrect: false, isActive: true },
+        { id: "a4", text: "Un type de base de données", isCorrect: false, isActive: true },
+      ],
+      explanation: "Un algorithme est une séquence finie d'opérations permettant de résoudre un problème.",
+    },
+    {
+      id: "sq2", question: "Que signifie HTML ?", isActive: true,
+      answers: [
+        { id: "a1", text: "HyperText Markup Language", isCorrect: true, isActive: true },
+        { id: "a2", text: "High Tech Modern Language", isCorrect: false, isActive: true },
+        { id: "a3", text: "Home Tool Markup Language", isCorrect: false, isActive: true },
+        { id: "a4", text: "Hyper Transfer Mail Language", isCorrect: false, isActive: true },
+      ],
+      explanation: "HTML est le langage de balisage standard pour structurer les pages web.",
+    },
+    {
+      id: "sq3", question: "Quel est le rôle d'un serveur DNS ?", isActive: true,
+      answers: [
+        { id: "a1", text: "Héberger des sites web", isCorrect: false, isActive: true },
+        { id: "a2", text: "Traduire les noms de domaine en adresses IP", isCorrect: true, isActive: true },
+        { id: "a3", text: "Protéger contre les virus", isCorrect: false, isActive: true },
+        { id: "a4", text: "Stocker des fichiers", isCorrect: false, isActive: true },
+      ],
+      explanation: "Le DNS résout les noms de domaine (ex: google.com) en adresses IP.",
+    },
+    {
+      id: "sq4", question: "Qu'est-ce que le Big Data ?", isActive: true,
+      answers: [
+        { id: "a1", text: "Un gros ordinateur", isCorrect: false, isActive: true },
+        { id: "a2", text: "Le traitement de volumes massifs de données", isCorrect: true, isActive: true },
+        { id: "a3", text: "Un réseau social", isCorrect: false, isActive: true },
+        { id: "a4", text: "Un système d'exploitation", isCorrect: false, isActive: true },
+      ],
+      explanation: "Le Big Data désigne les ensembles de données trop volumineux pour les outils classiques.",
+    },
+    {
+      id: "sq5", question: "Que signifie IoT ?", isActive: true,
+      answers: [
+        { id: "a1", text: "Internet of Things", isCorrect: true, isActive: true },
+        { id: "a2", text: "Input/Output Technology", isCorrect: false, isActive: true },
+        { id: "a3", text: "Integrated Online Tool", isCorrect: false, isActive: true },
+        { id: "a4", text: "Internal Operations Team", isCorrect: false, isActive: true },
+      ],
+      explanation: "L'IoT désigne l'interconnexion d'objets physiques via Internet.",
+    },
+    {
+      id: "sq6", question: "Qu'est-ce qu'un VPN ?", isActive: true,
+      answers: [
+        { id: "a1", text: "Very Private Network", isCorrect: false, isActive: true },
+        { id: "a2", text: "Virtual Private Network", isCorrect: true, isActive: true },
+        { id: "a3", text: "Visual Processing Node", isCorrect: false, isActive: true },
+        { id: "a4", text: "Verified Public Network", isCorrect: false, isActive: true },
+      ],
+      explanation: "Un VPN crée un tunnel chiffré pour sécuriser les communications réseau.",
+    },
+    {
+      id: "sq7", question: "Quel langage est souvent utilisé pour l'analyse de données ?", isActive: true,
+      answers: [
+        { id: "a1", text: "HTML", isCorrect: false, isActive: true },
+        { id: "a2", text: "Python", isCorrect: true, isActive: true },
+        { id: "a3", text: "CSS", isCorrect: false, isActive: true },
+        { id: "a4", text: "XML", isCorrect: false, isActive: true },
+      ],
+      explanation: "Python est très populaire en data science grâce à ses bibliothèques (Pandas, NumPy, etc.).",
+    },
+    {
+      id: "sq8", question: "Qu'est-ce que l'open source ?", isActive: true,
+      answers: [
+        { id: "a1", text: "Un logiciel gratuit sans code visible", isCorrect: false, isActive: true },
+        { id: "a2", text: "Un logiciel dont le code source est librement accessible", isCorrect: true, isActive: true },
+        { id: "a3", text: "Un type de licence commerciale", isCorrect: false, isActive: true },
+        { id: "a4", text: "Un service cloud", isCorrect: false, isActive: true },
+      ],
+      explanation: "L'open source permet à quiconque de consulter, modifier et distribuer le code.",
+    },
+    {
+      id: "sq9", question: "Que mesure la latence réseau ?", isActive: true,
+      answers: [
+        { id: "a1", text: "La vitesse de téléchargement", isCorrect: false, isActive: true },
+        { id: "a2", text: "Le temps de trajet d'un paquet entre deux points", isCorrect: true, isActive: true },
+        { id: "a3", text: "La capacité de stockage", isCorrect: false, isActive: true },
+        { id: "a4", text: "Le nombre d'utilisateurs connectés", isCorrect: false, isActive: true },
+      ],
+      explanation: "La latence mesure le délai de transmission des données, souvent exprimé en millisecondes.",
+    },
+    {
+      id: "sq10", question: "Qu'est-ce que le phishing ?", isActive: true,
+      answers: [
+        { id: "a1", text: "Un type de firewall", isCorrect: false, isActive: true },
+        { id: "a2", text: "Une technique d'hameçonnage pour voler des informations", isCorrect: true, isActive: true },
+        { id: "a3", text: "Un protocole réseau", isCorrect: false, isActive: true },
+        { id: "a4", text: "Un logiciel de compression", isCorrect: false, isActive: true },
+      ],
+      explanation: "Le phishing utilise de faux emails ou sites pour tromper les victimes et récupérer leurs données.",
+    },
+  ];
+
   const createNew = () => {
     const newConfig: QuizConfig = {
       id: Date.now().toString(),
@@ -52,7 +155,7 @@ const AdminPage = () => {
       resultMessages: [...defaultResultMessages],
       isActive: true,
       createdBy: user?.email || "",
-      questions: [],
+      questions: [...sampleQuestions],
     };
     setEditing(newConfig);
   };
