@@ -7,11 +7,21 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Trash2, Save, Webhook, Key, FileText, Settings, BookOpen, Shield, Users, Crown, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Webhook, Key, FileText, Settings, BookOpen, Shield, Users, Crown, Eye, EyeOff, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { QuizConfig, SiteConfig, ResultMessage, RoleUser, UserRole } from "@/types/quiz";
 import { useAuth } from "@/contexts/AuthContext";
 import QuizQuestionViewer from "@/components/admin/QuizQuestionViewer";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const defaultResultMessages: ResultMessage[] = [
   { minScore: 0, maxScore: 40, title: "À renforcer", message: "Continuez à vous former." },
@@ -24,6 +34,8 @@ const AdminPage = () => {
   const [configs, setConfigs] = useState<QuizConfig[]>([]);
   const [editing, setEditing] = useState<QuizConfig | null>(null);
   const [viewingQuestions, setViewingQuestions] = useState<string | null>(null);
+  const [showQuestions, setShowQuestions] = useState(false);
+  const [showRegenDialog, setShowRegenDialog] = useState(false);
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(() => {
     try {
       const stored = localStorage.getItem("siteConfig");
@@ -360,19 +372,109 @@ const AdminPage = () => {
                 </div>
               </section>
 
-              {/* Questions existantes */}
-              {editing.questions.length > 0 && (
-                <section className="rounded-xl border border-border bg-card p-6 space-y-4">
+              {/* Questions */}
+              <section className="rounded-xl border border-border bg-card p-6 space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <h2 className="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
                     <Eye className="h-5 w-5 text-primary" />
                     Questions ({editing.questions.filter((q) => q.isActive).length} actives / {editing.questions.length} total)
                   </h2>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowRegenDialog(true)}
+                      className="gap-2"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Régénérer
+                    </Button>
+                    {editing.questions.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowQuestions(!showQuestions)}
+                        className="gap-2"
+                      >
+                        {showQuestions ? (
+                          <>Masquer <ChevronUp className="h-4 w-4" /></>
+                        ) : (
+                          <>Aperçu <ChevronDown className="h-4 w-4" /></>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Preview compact */}
+                {!showQuestions && editing.questions.length > 0 && (
+                  <div className="rounded-lg border border-border/50 bg-secondary/20 p-4 space-y-1.5">
+                    {editing.questions.slice(0, 5).map((q, i) => (
+                      <div key={q.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                          {i + 1}
+                        </span>
+                        <span className="truncate">{q.question}</span>
+                        {!q.isActive && (
+                          <span className="ml-auto shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            Désactivée
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                    {editing.questions.length > 5 && (
+                      <button
+                        onClick={() => setShowQuestions(true)}
+                        className="text-xs text-primary hover:underline mt-1"
+                      >
+                        + {editing.questions.length - 5} autres questions…
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {editing.questions.length === 0 && !showQuestions && (
+                  <div className="rounded-lg border border-dashed border-border p-8 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Aucune question. Cliquez sur « Régénérer » pour générer des questions via l'IA.
+                    </p>
+                  </div>
+                )}
+
+                {/* Full question list */}
+                {showQuestions && (
                   <QuizQuestionViewer
                     config={editing}
                     onUpdate={(updated) => setEditing(updated)}
                   />
-                </section>
-              )}
+                )}
+
+                {/* Regenerate confirmation dialog */}
+                <AlertDialog open={showRegenDialog} onOpenChange={setShowRegenDialog}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Régénérer les questions ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Toutes les questions existantes seront <span className="font-semibold text-foreground">définitivement supprimées</span> et remplacées par de nouvelles questions générées par l'IA à partir du document source. Cette action est irréversible.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          toast.info("Régénération des questions via l'IA en cours…");
+                          // TODO: appeler le webhook n8n pour régénérer les questions
+                          setShowRegenDialog(false);
+                        }}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Régénérer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </section>
 
               {/* Messages de résultats */}
               <section className="rounded-xl border border-border bg-card p-6 space-y-4">
