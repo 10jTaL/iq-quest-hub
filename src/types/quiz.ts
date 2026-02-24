@@ -2,6 +2,7 @@ export interface QuizAnswer {
   id: string;
   text: string;
   isCorrect: boolean;
+  isActive: boolean;
 }
 
 export interface QuizQuestion {
@@ -9,6 +10,7 @@ export interface QuizQuestion {
   question: string;
   answers: QuizAnswer[];
   explanation: string;
+  isActive: boolean;
 }
 
 export interface Quiz {
@@ -22,6 +24,8 @@ export interface Quiz {
   introduction: string;
   questions: QuizQuestion[];
   resultMessages: ResultMessage[];
+  isActive: boolean;
+  createdBy: string;
 }
 
 export interface ResultMessage {
@@ -41,6 +45,9 @@ export interface QuizConfig {
   sourceDocument: string;
   questionCount: number;
   resultMessages: ResultMessage[];
+  isActive: boolean;
+  createdBy: string;
+  questions: QuizQuestion[];
 }
 
 export type UserRole = "user" | "maitre_du_jeu" | "administrateur";

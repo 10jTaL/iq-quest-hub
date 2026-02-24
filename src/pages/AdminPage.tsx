@@ -5,9 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Plus, Trash2, Save, Webhook, Key, FileText, Settings, BookOpen, Shield, Users, Crown } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Save, Webhook, Key, FileText, Settings, BookOpen, Shield, Users, Crown, Eye, EyeOff } from "lucide-react";
 import { QuizConfig, SiteConfig, ResultMessage, RoleUser, UserRole } from "@/types/quiz";
+import { useAuth } from "@/contexts/AuthContext";
+import QuizQuestionViewer from "@/components/admin/QuizQuestionViewer";
 import { toast } from "sonner";
 
 const defaultResultMessages: ResultMessage[] = [
@@ -17,23 +20,24 @@ const defaultResultMessages: ResultMessage[] = [
 ];
 
 const AdminPage = () => {
+  const { user } = useAuth();
   const [configs, setConfigs] = useState<QuizConfig[]>([]);
   const [editing, setEditing] = useState<QuizConfig | null>(null);
+  const [viewingQuestions, setViewingQuestions] = useState<string | null>(null);
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(() => {
     try {
       const stored = localStorage.getItem("siteConfig");
       if (stored) return JSON.parse(stored);
     } catch {}
-    return {
-      webhookUrl: "",
-      apiKey: "",
-      maxApiRetries: 3,
-      roleUsers: [],
-    };
+    return { webhookUrl: "", apiKey: "", maxApiRetries: 3, roleUsers: [] };
   });
   const [newRoleEmail, setNewRoleEmail] = useState("");
   const [newRoleName, setNewRoleName] = useState("");
   const [newRole, setNewRole] = useState<UserRole>("maitre_du_jeu");
+
+  const myQuizzes = configs.filter(
+    (c) => c.createdBy === user?.email || user?.role === "administrateur"
+  );
 
   const createNew = () => {
     const newConfig: QuizConfig = {
@@ -46,6 +50,9 @@ const AdminPage = () => {
       sourceDocument: "",
       questionCount: 10,
       resultMessages: [...defaultResultMessages],
+      isActive: true,
+      createdBy: user?.email || "",
+      questions: [],
     };
     setEditing(newConfig);
   };
@@ -75,6 +82,17 @@ const AdminPage = () => {
   const handleDelete = (id: string) => {
     setConfigs((prev) => prev.filter((c) => c.id !== id));
     toast.success("Quiz supprimé.");
+  };
+
+  const toggleQuizActive = (id: string) => {
+    setConfigs((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, isActive: !c.isActive } : c))
+    );
+    toast.success("Statut du quiz mis à jour.");
+  };
+
+  const handleUpdateQuizQuestions = (updated: QuizConfig) => {
+    setConfigs((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
   };
 
   const handleSaveSiteConfig = () => {
@@ -201,6 +219,15 @@ const AdminPage = () => {
                     rows={3}
                   />
                 </div>
+                <div className="flex items-center gap-3">
+                  <Switch
+                    checked={editing.isActive}
+                    onCheckedChange={(checked) => setEditing({ ...editing, isActive: checked })}
+                  />
+                  <Label className="cursor-pointer">
+                    {editing.isActive ? "Quiz actif" : "Quiz désactivé"}
+                  </Label>
+                </div>
               </section>
 
               {/* Paramétrage du quiz */}
@@ -229,6 +256,20 @@ const AdminPage = () => {
                   />
                 </div>
               </section>
+
+              {/* Questions existantes */}
+              {editing.questions.length > 0 && (
+                <section className="rounded-xl border border-border bg-card p-6 space-y-4">
+                  <h2 className="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
+                    <Eye className="h-5 w-5 text-primary" />
+                    Questions ({editing.questions.filter((q) => q.isActive).length} actives / {editing.questions.length} total)
+                  </h2>
+                  <QuizQuestionViewer
+                    config={editing}
+                    onUpdate={(updated) => setEditing(updated)}
+                  />
+                </section>
+              )}
 
               {/* Messages de résultats */}
               <section className="rounded-xl border border-border bg-card p-6 space-y-4">
@@ -298,39 +339,88 @@ const AdminPage = () => {
             <TabsContent value="quizzes">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <div className="mb-8 flex items-center justify-between">
-                  <h1 className="font-heading text-2xl font-bold text-foreground">Mes Quiz</h1>
+                  <div>
+                    <h1 className="font-heading text-2xl font-bold text-foreground">Mes Quiz</h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {user?.role === "administrateur"
+                        ? "Tous les quiz (vue administrateur)"
+                        : `Quiz créés par ${user?.email}`}
+                    </p>
+                  </div>
                   <Button onClick={createNew} className="gap-2 rounded-full">
                     <Plus className="h-4 w-4" />
                     Nouveau quiz
                   </Button>
                 </div>
 
-                {configs.length === 0 ? (
+                {myQuizzes.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-border p-16 text-center">
                     <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground/40" />
                     <p className="text-muted-foreground">Aucun quiz configuré. Créez votre premier quiz pour commencer.</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {configs.map((config) => (
-                      <div
-                        key={config.id}
-                        className="flex items-center justify-between rounded-lg border border-border bg-card p-4"
-                      >
-                        <div>
-                          <h3 className="font-heading font-semibold text-foreground">
-                            {config.icon} {config.title}
-                          </h3>
-                          <p className="text-sm text-muted-foreground">{config.questionCount} questions</p>
+                    {myQuizzes.map((config) => (
+                      <div key={config.id}>
+                        <div
+                          className={`flex items-center justify-between rounded-lg border bg-card p-4 transition-colors ${
+                            config.isActive ? "border-border" : "border-border/50 opacity-60"
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Switch
+                              checked={config.isActive}
+                              onCheckedChange={() => toggleQuizActive(config.id)}
+                              aria-label="Activer/désactiver le quiz"
+                            />
+                            <div>
+                              <h3 className="font-heading font-semibold text-foreground flex items-center gap-2">
+                                {config.icon} {config.title}
+                                {!config.isActive && (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                                    <EyeOff className="h-3 w-3" />
+                                    Désactivé
+                                  </span>
+                                )}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                {config.questionCount} questions · créé par {config.createdBy}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                setViewingQuestions(viewingQuestions === config.id ? null : config.id)
+                              }
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Questions
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => setEditing(config)}>
+                              Modifier
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleDelete(config.id)}>
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" onClick={() => setEditing(config)}>
-                            Modifier
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDelete(config.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
+
+                        {/* Questions viewer inline */}
+                        {viewingQuestions === config.id && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            className="mt-2 rounded-lg border border-border bg-secondary/20 p-4"
+                          >
+                            <QuizQuestionViewer
+                              config={config}
+                              onUpdate={handleUpdateQuizQuestions}
+                            />
+                          </motion.div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -386,7 +476,6 @@ const AdminPage = () => {
                       Par défaut, chaque personne est un <strong>Utilisateur</strong>. Ajoutez des rôles spécifiques ci-dessous.
                     </p>
 
-                    {/* Rôles existants */}
                     <div className="space-y-2">
                       {siteConfig.roleUsers.length === 0 ? (
                         <div className="rounded-lg border border-dashed border-border p-6 text-center">
@@ -394,31 +483,31 @@ const AdminPage = () => {
                           <p className="text-sm text-muted-foreground">Aucun rôle spécifique attribué.</p>
                         </div>
                       ) : (
-                        siteConfig.roleUsers.map((user) => (
+                        siteConfig.roleUsers.map((u) => (
                           <div
-                            key={user.id}
+                            key={u.id}
                             className="flex items-center justify-between rounded-lg border border-border bg-secondary/30 p-3"
                           >
                             <div className="flex items-center gap-3">
-                              <span className={roleLabels[user.role].color}>
-                                {roleLabels[user.role].icon}
+                              <span className={roleLabels[u.role].color}>
+                                {roleLabels[u.role].icon}
                               </span>
                               <div>
-                                <p className="text-sm font-medium text-foreground">{user.name}</p>
-                                <p className="text-xs text-muted-foreground">{user.email}</p>
+                                <p className="text-sm font-medium text-foreground">{u.name}</p>
+                                <p className="text-xs text-muted-foreground">{u.email}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <select
-                                value={user.role}
-                                onChange={(e) => updateRoleUser(user.id, e.target.value as UserRole)}
+                                value={u.role}
+                                onChange={(e) => updateRoleUser(u.id, e.target.value as UserRole)}
                                 className="rounded-md border border-input bg-background px-2 py-1 text-sm"
                               >
                                 <option value="administrateur">Administrateur</option>
                                 <option value="maitre_du_jeu">Maître du jeu</option>
                                 <option value="user">Utilisateur</option>
                               </select>
-                              <Button variant="outline" size="sm" onClick={() => removeRoleUser(user.id)}>
+                              <Button variant="outline" size="sm" onClick={() => removeRoleUser(u.id)}>
                                 <Trash2 className="h-3 w-3 text-destructive" />
                               </Button>
                             </div>
