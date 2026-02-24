@@ -36,6 +36,7 @@ const AdminPage = () => {
   const [viewingQuestions, setViewingQuestions] = useState<string | null>(null);
   const [showQuestions, setShowQuestions] = useState(false);
   const [showRegenDialog, setShowRegenDialog] = useState(false);
+  const [regenErrors, setRegenErrors] = useState<{ title?: boolean; sourceDocument?: boolean; questionCount?: boolean }>({});
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(() => {
     try {
       const stored = localStorage.getItem("siteConfig");
@@ -304,8 +305,12 @@ const AdminPage = () => {
                     <Label>Titre du quiz</Label>
                     <Input
                       value={editing.title}
-                      onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+                      onChange={(e) => {
+                        setEditing({ ...editing, title: e.target.value });
+                        if (e.target.value.trim()) setRegenErrors(prev => ({ ...prev, title: false }));
+                      }}
                       placeholder="Ex: Cybersécurité avancée"
+                      className={regenErrors.title ? "border-destructive ring-destructive" : ""}
                     />
                   </div>
                   <div>
@@ -355,9 +360,13 @@ const AdminPage = () => {
                   <Label>Document source / Base de connaissance</Label>
                   <Textarea
                     value={editing.sourceDocument}
-                    onChange={(e) => setEditing({ ...editing, sourceDocument: e.target.value })}
+                    onChange={(e) => {
+                      setEditing({ ...editing, sourceDocument: e.target.value });
+                      if (e.target.value.trim()) setRegenErrors(prev => ({ ...prev, sourceDocument: false }));
+                    }}
                     placeholder="URL du document ou texte de référence envoyé à l'agent IA"
                     rows={3}
+                    className={regenErrors.sourceDocument ? "border-destructive ring-destructive" : ""}
                   />
                 </div>
                 <div className="max-w-xs">
@@ -367,7 +376,12 @@ const AdminPage = () => {
                     min={1}
                     max={50}
                     value={editing.questionCount}
-                    onChange={(e) => setEditing({ ...editing, questionCount: parseInt(e.target.value) || 10 })}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value) || 0;
+                      setEditing({ ...editing, questionCount: val });
+                      if (val >= 1) setRegenErrors(prev => ({ ...prev, questionCount: false }));
+                    }}
+                    className={regenErrors.questionCount ? "border-destructive ring-destructive" : ""}
                   />
                 </div>
               </section>
@@ -383,7 +397,20 @@ const AdminPage = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setShowRegenDialog(true)}
+                      onClick={() => {
+                        if (!editing) return;
+                        const errors = {
+                          title: !editing.title.trim(),
+                          sourceDocument: !editing.sourceDocument.trim(),
+                          questionCount: !editing.questionCount || editing.questionCount < 1,
+                        };
+                        setRegenErrors(errors);
+                        if (errors.title || errors.sourceDocument || errors.questionCount) {
+                          toast.error("Veuillez remplir le titre, le document source et le nombre de questions avant de régénérer.");
+                          return;
+                        }
+                        setShowRegenDialog(true);
+                      }}
                       className="gap-2"
                     >
                       <RefreshCw className="h-4 w-4" />
