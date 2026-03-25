@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -9,9 +10,10 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, Plus, Trash2, Save, Webhook, Key, FileText, Settings, BookOpen, Shield, Users, Crown, Eye, EyeOff, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { QuizConfig, SiteConfig, ResultMessage, RoleUser, UserRole } from "@/types/quiz";
-import { useAuth } from "@/contexts/AuthContext";
+import { useOidc, useOidcAccessToken } from '@axa-fr/react-oidc';
 import QuizQuestionViewer from "@/components/admin/QuizQuestionViewer";
 import { toast } from "sonner";
+import { useUser } from "@/contexts/UserContext";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,14 +31,17 @@ const defaultResultMessages: ResultMessage[] = [
   { minScore: 71, maxScore: 100, title: "Excellent", message: "Bravo, vous maîtrisez le sujet !" },
 ];
 
+
 const AdminPage = () => {
-  const { user } = useAuth();
+  const { logout } = useOidc();
+  const { accessTokenPayload } = useOidcAccessToken();
   const [configs, setConfigs] = useState<QuizConfig[]>([]);
   const [editing, setEditing] = useState<QuizConfig | null>(null);
   const [viewingQuestions, setViewingQuestions] = useState<string | null>(null);
   const [showQuestions, setShowQuestions] = useState(false);
   const [showRegenDialog, setShowRegenDialog] = useState(false);
   const [regenErrors, setRegenErrors] = useState<{ title?: boolean; sourceDocument?: boolean; questionCount?: boolean }>({});
+  const { role } = useUser();
   const [siteConfig, setSiteConfig] = useState<SiteConfig>(() => {
     try {
       const stored = localStorage.getItem("siteConfig");
@@ -48,112 +53,106 @@ const AdminPage = () => {
   const [newRoleName, setNewRoleName] = useState("");
   const [newRole, setNewRole] = useState<UserRole>("maitre_du_jeu");
 
+  const groups = accessTokenPayload?.groups          // Keycloak, Azure AD
+           ?? accessTokenPayload?.roles            // Keycloak roles
+           ?? accessTokenPayload?.["cognito:groups"] // AWS Cognito
+           ?? [];
+  console.log(groups);
+  console.log(accessTokenPayload);
   const myQuizzes = configs.filter(
-    (c) => c.createdBy === user?.email || user?.role === "administrateur"
+    (c) => c.createdBy === accessTokenPayload?.email || role === "administrateur"
   );
+  //begin mdu 26/02/2026
+  const [isLoading, setIsLoading] = useState(false);
+  //end mdu 26/02/2026
 
-  const sampleQuestions = [
-    {
-      id: "sq1", question: "Qu'est-ce qu'un algorithme ?", isActive: true,
-      answers: [
-        { id: "a1", text: "Un langage de programmation", isCorrect: false, isActive: true },
-        { id: "a2", text: "Une suite d'instructions pour résoudre un problème", isCorrect: true, isActive: true },
-        { id: "a3", text: "Un composant matériel", isCorrect: false, isActive: true },
-        { id: "a4", text: "Un type de base de données", isCorrect: false, isActive: true },
-      ],
-      explanation: "Un algorithme est une séquence finie d'opérations permettant de résoudre un problème.",
-    },
-    {
-      id: "sq2", question: "Que signifie HTML ?", isActive: true,
-      answers: [
-        { id: "a1", text: "HyperText Markup Language", isCorrect: true, isActive: true },
-        { id: "a2", text: "High Tech Modern Language", isCorrect: false, isActive: true },
-        { id: "a3", text: "Home Tool Markup Language", isCorrect: false, isActive: true },
-        { id: "a4", text: "Hyper Transfer Mail Language", isCorrect: false, isActive: true },
-      ],
-      explanation: "HTML est le langage de balisage standard pour structurer les pages web.",
-    },
-    {
-      id: "sq3", question: "Quel est le rôle d'un serveur DNS ?", isActive: true,
-      answers: [
-        { id: "a1", text: "Héberger des sites web", isCorrect: false, isActive: true },
-        { id: "a2", text: "Traduire les noms de domaine en adresses IP", isCorrect: true, isActive: true },
-        { id: "a3", text: "Protéger contre les virus", isCorrect: false, isActive: true },
-        { id: "a4", text: "Stocker des fichiers", isCorrect: false, isActive: true },
-      ],
-      explanation: "Le DNS résout les noms de domaine (ex: google.com) en adresses IP.",
-    },
-    {
-      id: "sq4", question: "Qu'est-ce que le Big Data ?", isActive: true,
-      answers: [
-        { id: "a1", text: "Un gros ordinateur", isCorrect: false, isActive: true },
-        { id: "a2", text: "Le traitement de volumes massifs de données", isCorrect: true, isActive: true },
-        { id: "a3", text: "Un réseau social", isCorrect: false, isActive: true },
-        { id: "a4", text: "Un système d'exploitation", isCorrect: false, isActive: true },
-      ],
-      explanation: "Le Big Data désigne les ensembles de données trop volumineux pour les outils classiques.",
-    },
-    {
-      id: "sq5", question: "Que signifie IoT ?", isActive: true,
-      answers: [
-        { id: "a1", text: "Internet of Things", isCorrect: true, isActive: true },
-        { id: "a2", text: "Input/Output Technology", isCorrect: false, isActive: true },
-        { id: "a3", text: "Integrated Online Tool", isCorrect: false, isActive: true },
-        { id: "a4", text: "Internal Operations Team", isCorrect: false, isActive: true },
-      ],
-      explanation: "L'IoT désigne l'interconnexion d'objets physiques via Internet.",
-    },
-    {
-      id: "sq6", question: "Qu'est-ce qu'un VPN ?", isActive: true,
-      answers: [
-        { id: "a1", text: "Very Private Network", isCorrect: false, isActive: true },
-        { id: "a2", text: "Virtual Private Network", isCorrect: true, isActive: true },
-        { id: "a3", text: "Visual Processing Node", isCorrect: false, isActive: true },
-        { id: "a4", text: "Verified Public Network", isCorrect: false, isActive: true },
-      ],
-      explanation: "Un VPN crée un tunnel chiffré pour sécuriser les communications réseau.",
-    },
-    {
-      id: "sq7", question: "Quel langage est souvent utilisé pour l'analyse de données ?", isActive: true,
-      answers: [
-        { id: "a1", text: "HTML", isCorrect: false, isActive: true },
-        { id: "a2", text: "Python", isCorrect: true, isActive: true },
-        { id: "a3", text: "CSS", isCorrect: false, isActive: true },
-        { id: "a4", text: "XML", isCorrect: false, isActive: true },
-      ],
-      explanation: "Python est très populaire en data science grâce à ses bibliothèques (Pandas, NumPy, etc.).",
-    },
-    {
-      id: "sq8", question: "Qu'est-ce que l'open source ?", isActive: true,
-      answers: [
-        { id: "a1", text: "Un logiciel gratuit sans code visible", isCorrect: false, isActive: true },
-        { id: "a2", text: "Un logiciel dont le code source est librement accessible", isCorrect: true, isActive: true },
-        { id: "a3", text: "Un type de licence commerciale", isCorrect: false, isActive: true },
-        { id: "a4", text: "Un service cloud", isCorrect: false, isActive: true },
-      ],
-      explanation: "L'open source permet à quiconque de consulter, modifier et distribuer le code.",
-    },
-    {
-      id: "sq9", question: "Que mesure la latence réseau ?", isActive: true,
-      answers: [
-        { id: "a1", text: "La vitesse de téléchargement", isCorrect: false, isActive: true },
-        { id: "a2", text: "Le temps de trajet d'un paquet entre deux points", isCorrect: true, isActive: true },
-        { id: "a3", text: "La capacité de stockage", isCorrect: false, isActive: true },
-        { id: "a4", text: "Le nombre d'utilisateurs connectés", isCorrect: false, isActive: true },
-      ],
-      explanation: "La latence mesure le délai de transmission des données, souvent exprimé en millisecondes.",
-    },
-    {
-      id: "sq10", question: "Qu'est-ce que le phishing ?", isActive: true,
-      answers: [
-        { id: "a1", text: "Un type de firewall", isCorrect: false, isActive: true },
-        { id: "a2", text: "Une technique d'hameçonnage pour voler des informations", isCorrect: true, isActive: true },
-        { id: "a3", text: "Un protocole réseau", isCorrect: false, isActive: true },
-        { id: "a4", text: "Un logiciel de compression", isCorrect: false, isActive: true },
-      ],
-      explanation: "Le phishing utilise de faux emails ou sites pour tromper les victimes et récupérer leurs données.",
-    },
+  const loadingMessages = [
+    "📄 L'IA lit le document...",
+    "🔎 L'IA analyse la structure du contenu...",
+    "🧠 L'IA identifie les concepts clés...",
+    "💡 L'IA réfléchit aux meilleures questions...",
+    "✍️ L'IA rédige les questions...",
+    "🎯 L'IA formule les réponses...",
+    "🪤 L'IA prépare les réponses pièges...",
+    "🔍 L'IA vérifie la cohérence des réponses...",
+    "📊 L'IA équilibre la difficulté du quiz...",
+    "⚙️ L'IA finalise le quiz...",
+    "🏁 Presque terminé...",
   ];
+
+  useEffect(() => {
+    if (!isLoading) return;
+    let i = 0;
+    const interval = setInterval(() => {
+      i = (i + 1) % loadingMessages.length;
+      setLoadingMessage(loadingMessages[i]);
+    }, 5500);
+    return () => clearInterval(interval);
+  }, [isLoading]);
+
+  const [loadingMessage, setLoadingMessage] = useState(loadingMessages[0]);
+
+  //begin mdu 23/02/2026
+  useEffect(() => {
+    async function fetchUsers() {
+      try {
+        const response = await fetch("/api/users");
+        if (!response.ok) {
+          throw new Error("Erreur API");
+        }
+        const users: RoleUser[] = await response.json();
+
+        setSiteConfig((prev) => ({
+          ...prev,
+          roleUsers: users,
+        }));
+      } catch (error) {
+        console.error("Erreur lors du chargement des users", error);
+        toast.error("Impossible de charger les utilisateurs.");
+      }
+    }
+
+    fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    async function fetchConfig() {
+      try {
+        const response = await fetch("/api/config");
+        if (!response.ok) {
+          throw new Error("Erreur API");
+        }
+        const configFromApi = (await response.json()) as Partial<SiteConfig>;
+        setSiteConfig((prev) => ({
+        webhookUrl: configFromApi[0].webhook_url ?? prev.webhook_url ?? "",
+        apiKey: configFromApi[0].api_key ?? prev.api_key ?? "",
+        maxApiRetries: configFromApi[0].max_api_retries ?? prev.max_api_retries ?? 3,
+        roleUsers: configFromApi.roleUsers ?? prev.roleUsers ?? [],
+      }));
+      } catch (error) {
+        console.error("Erreur lors du chargement des users", error);
+        toast.error("Impossible de charger les utilisateurs.");
+      }
+    }
+
+    fetchConfig();
+  }, []);
+
+  useEffect(() => {
+  async function fetchQuizzes() {
+    try {
+        const response = await fetch("/api/quiz");
+        if (!response.ok) throw new Error("Erreur API");
+        const quizzes: QuizConfig[] = await response.json();
+        setConfigs(quizzes);
+      } catch (error) {
+        console.error("Erreur lors du chargement des quiz", error);
+        toast.error("Impossible de charger les quiz.");
+      }
+    }
+    fetchQuizzes();
+  }, []); // ← [] = une seule fois au montage du composant
+  //end mdu 23/02/2026
 
   const createNew = () => {
     const newConfig: QuizConfig = {
@@ -167,13 +166,13 @@ const AdminPage = () => {
       questionCount: 10,
       resultMessages: [...defaultResultMessages],
       isActive: true,
-      createdBy: user?.email || "",
-      questions: [...sampleQuestions],
+      createdBy: accessTokenPayload?.email || "",
+      questions: [],
     };
     setEditing(newConfig);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editing) return;
     if (!editing.title) {
       toast.error("Le titre est requis.");
@@ -187,36 +186,141 @@ const AdminPage = () => {
       .replace(/(^-|-$)/g, "");
     const updated = { ...editing, slug };
 
-    setConfigs((prev) => {
-      const exists = prev.find((c) => c.id === updated.id);
-      return exists ? prev.map((c) => (c.id === updated.id ? updated : c)) : [...prev, updated];
-    });
-    setEditing(null);
-    toast.success("Quiz sauvegardé avec succès.");
+    try {
+      // ✅ Appel backend pour sauvegarder en BDD
+      const response = await fetch(
+        updated.id && configs.find(c => c.id === updated.id)
+          ? `/api/quiz/${updated.id}`  // ✅ PUT avec l'id dans l'URL
+          : `/api/quiz`,               // ✅ POST sans id
+        {
+          method: updated.id && configs.find(c => c.id === updated.id) ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updated),
+        }
+      );
+
+      if (!response.ok) throw new Error("Erreur lors de la sauvegarde");
+
+      const saved = await response.json();
+
+      // ✅ Met à jour le state local avec ce que la BDD a retourné
+      setConfigs(prev => {
+        const exists = prev.find(c => c.id === saved.id);
+        return exists
+          ? prev.map(c => c.id === saved.id ? saved : c)
+          : [...prev, saved];
+      });
+      if(!(updated.id && configs.find(c => c.id === updated.id)))
+      {
+        window.location.reload();
+      }
+      setEditing(null);
+      toast.success("Quiz sauvegardé avec succès.");
+    } catch (error) {
+      toast.error("Erreur lors de la sauvegarde du quiz.");
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setConfigs((prev) => prev.filter((c) => c.id !== id));
-    toast.success("Quiz supprimé.");
+  const handleDelete = async (id: string) => {
+    try {
+      const response = await fetch(`/api/quiz/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Erreur suppression");
+      setConfigs(prev => prev.filter(c => c.id !== id));
+      toast.success("Quiz supprimé.");
+    } catch (error) {
+      toast.error("Erreur lors de la suppression du quiz.");
+    }
   };
 
-  const toggleQuizActive = (id: string) => {
-    setConfigs((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, isActive: !c.isActive } : c))
-    );
-    toast.success("Statut du quiz mis à jour.");
+  const toggleQuizActive = async (id: string) => {
+    const quiz = configs.find(c => c.id === id);
+    if (!quiz) return;
+
+    const newValue = !quiz.isActive;
+
+    try {
+      const response = await fetch(`/api/quiz/${id}/active`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: newValue }),
+      });
+      if (!response.ok) throw new Error("Erreur toggle quiz");
+
+      // ✅ Met à jour le state local
+      setConfigs(prev => prev.map(c => c.id === id ? { ...c, isActive: newValue } : c));
+      toast.success("Statut du quiz mis à jour.");
+    } catch (error) {
+      toast.error("Erreur lors de la mise à jour du statut.");
+    }
+  };
+
+  const toggleQuestionActive = async (quizId: string, questionId: string) => {
+    const quiz = configs.find(c => c.id === quizId);
+    if (!quiz) return;
+
+    const question = quiz.questions.find(q => q.id === questionId);
+    if (!question) return;
+
+    const newValue = !question.isActive;
+
+    try {
+      const response = await fetch(`/api/question/${questionId}/active`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isActive: newValue }),
+      });
+      if (!response.ok) throw new Error("Erreur toggle question");
+
+      // ✅ Met à jour uniquement la question dans le bon quiz
+      setConfigs(prev => prev.map(c =>
+        c.id === quizId
+          ? {
+              ...c,
+              questions: c.questions.map(q =>
+                q.id === questionId ? { ...q, isActive: newValue } : q
+              )
+            }
+          : c
+      ));
+      toast.success("Statut de la question mis à jour.");
+    } catch (error) {
+      toast.error("Erreur lors de la mise à jour du statut.");
+    }
+  };
+
+  const deleteQuestion = async (quizId: string, questionId: string) => {
+    try {
+      const response = await fetch(`/api/question/${questionId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Erreur suppression question");
+
+      setConfigs(prev => prev.map(c =>
+        c.id === quizId
+          ? { ...c, questions: c.questions.filter(q => q.id !== questionId) }
+          : c
+      ));
+      toast.success("Question supprimée.");
+    } catch (error) {
+      toast.error("Erreur lors de la suppression de la question.");
+    }
   };
 
   const handleUpdateQuizQuestions = (updated: QuizConfig) => {
     setConfigs((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
   };
 
-  const handleSaveSiteConfig = () => {
+  const handleSaveSiteConfig = async () => {
     if (!siteConfig.webhookUrl) {
       toast.error("L'URL du webhook est requise.");
       return;
     }
-    localStorage.setItem("siteConfig", JSON.stringify(siteConfig));
+    //begin mdu 23/02/2026
+    await updateConfig(siteConfig);
+    //localStorage.setItem("siteConfig", JSON.stringify(siteConfig));
+    //end mdu 23/02/2026
     toast.success("Paramètres du site sauvegardés.");
   };
 
@@ -227,7 +331,7 @@ const AdminPage = () => {
     setEditing({ ...editing, resultMessages: updated });
   };
 
-  const addRoleUser = () => {
+  const addRoleUser = async () => {
     if (!newRoleEmail || !newRoleName) {
       toast.error("L'email et le nom sont requis.");
       return;
@@ -238,17 +342,36 @@ const AdminPage = () => {
       name: newRoleName,
       role: newRole,
     };
-    setSiteConfig((prev) => ({
-      ...prev,
-      roleUsers: [...prev.roleUsers, newUser],
-    }));
+    //begin mdu 23/02/2026
+    try {
+      await addUser(newUser);
+
+      setSiteConfig((prev) => ({
+        ...prev,
+        roleUsers: [...prev.roleUsers, newUser],
+      }));
+
+      toast.success("Utilisateur ajouté.");
+    } catch (error) {
+      toast.error("Erreur lors de la création utilisateur.");
+    }
+    //end mdu 23/02/2026
     setNewRoleEmail("");
     setNewRoleName("");
     setNewRole("maitre_du_jeu");
     toast.success("Utilisateur ajouté.");
   };
 
-  const removeRoleUser = (id: string) => {
+  const removeRoleUser = async (id: string) => {
+    //begin mdu 24/02/2026
+    const newUser: RoleUser = {
+      id: id,
+      email: newRoleEmail,
+      name: newRoleName,
+      role: "",
+    };
+    deleteUser(newUser);
+    //end mdu 24/02/2026
     setSiteConfig((prev) => ({
       ...prev,
       roleUsers: prev.roleUsers.filter((u) => u.id !== id),
@@ -256,21 +379,98 @@ const AdminPage = () => {
     toast.success("Utilisateur supprimé.");
   };
 
-  const updateRoleUser = (id: string, role: UserRole) => {
+  const updateRoleUser = async (id: string, role: UserRole) => {
+    //begin mdu 24/02/2026
+    const newUser: RoleUser = {
+      id: id,
+      email: newRoleEmail,
+      name: newRoleName,
+      role: role,
+    };
+    await updateUser(newUser);
+    //end mdu 24/02/2026
     setSiteConfig((prev) => ({
       ...prev,
       roleUsers: prev.roleUsers.map((u) => (u.id === id ? { ...u, role } : u)),
     }));
   };
 
+  async function createQuizz(config: SiteConfig, sourceDocument: string){
+    try
+    {
+      setIsLoading(true);
+      if (!sourceDocument) {
+        toast.error("Aucun document source fourni");
+        return;
+      }
+
+      // 1. Vérifier l'existence du fichier côté backend
+      const checkResponse = await fetch("/api/check-file", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: sourceDocument}),
+      });
+
+      if (!checkResponse.ok) {
+        toast.error("Erreur lors de la vérification du document");
+        return;
+      }
+
+      const { exists } = await checkResponse.json() as { exists: boolean };
+
+      if (!exists) {
+        toast.error("Le document source n'existe pas sur le serveur.");
+        return;
+      }
+
+      const response = await fetch("/api/send-pdf-to-n8n", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ path: sourceDocument, url: config.webhookUrl}),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de l'envoi du document");
+      }
+
+      const data = await response.json();
+      const questions = Array.isArray(data) ? data : data[0]?.output;
+
+      if (!questions || !Array.isArray(questions)) {
+        toast.error("Format de questions invalide reçu de n8n");
+        return;
+      }
+
+      setEditing(prev => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          questions: questions,
+        };
+      });
+    }
+    catch(error) {
+    toast.error("Une erreur est survenue lors de la création du quiz.");
+    } finally {
+      setIsLoading(false); // ✅ toujours appelé, même en cas d'erreur
+    }
+  }
+
   const roleLabels: Record<UserRole, { label: string; icon: React.ReactNode; color: string }> = {
     administrateur: { label: "Administrateur", icon: <Crown className="h-4 w-4" />, color: "text-destructive" },
     maitre_du_jeu: { label: "Maître du jeu", icon: <Shield className="h-4 w-4" />, color: "text-primary" },
     user: { label: "Utilisateur", icon: <Users className="h-4 w-4" />, color: "text-muted-foreground" },
   };
-
   return (
     <div className="min-h-screen bg-background">
+      {isLoading && (
+        <div className="fixed inset-0 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm z-50 gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-300 border-t-primary" />
+          <p className="text-sm font-medium text-muted-foreground animate-pulse">
+            {loadingMessage}
+          </p>
+        </div>
+      )}
       <header className="border-b border-border bg-card">
         <div className="container flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -473,6 +673,8 @@ const AdminPage = () => {
                   <QuizQuestionViewer
                     config={editing}
                     onUpdate={(updated) => setEditing(updated)}
+                    onToggleQuestion={(questionId) => editing && toggleQuestionActive(editing.id, questionId)}
+                    onDeleteQuestion={(questionId) => editing && deleteQuestion(editing.id, questionId)}
                   />
                 )}
 
@@ -488,10 +690,10 @@ const AdminPage = () => {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Annuler</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={() => {
+                        onClick={async() => {
                           toast.info("Régénération des questions via l'IA en cours…");
                           // TODO: appeler le webhook n8n pour régénérer les questions
-                          setShowRegenDialog(false);
+                          createQuizz(siteConfig,editing.sourceDocument.trim());
                         }}
                         className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                       >
@@ -518,10 +720,12 @@ const AdminPage = () => {
                 <FileText className="h-4 w-4" />
                 Création de quiz
               </TabsTrigger>
-              <TabsTrigger value="settings" className="gap-2">
-                <Settings className="h-4 w-4" />
-                Paramètres du site
-              </TabsTrigger>
+                {role === "administrateur" && (  // ← ajout
+                    <TabsTrigger value="settings" className="gap-2">
+                      <Settings className="h-4 w-4" />
+                      Paramètres du site
+                    </TabsTrigger>
+                  )}
             </TabsList>
 
             {/* === Onglet Création de quiz === */}
@@ -531,9 +735,9 @@ const AdminPage = () => {
                   <div>
                     <h1 className="font-heading text-2xl font-bold text-foreground">Mes Quiz</h1>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {user?.role === "administrateur"
+                      {role === "administrateur"
                         ? "Tous les quiz (vue administrateur)"
-                        : `Quiz créés par ${user?.email}`}
+                        : `Quiz créés par ${accessTokenPayload?.email}`}
                     </p>
                   </div>
                   <Button onClick={createNew} className="gap-2 rounded-full">
@@ -607,6 +811,8 @@ const AdminPage = () => {
                             <QuizQuestionViewer
                               config={config}
                               onUpdate={handleUpdateQuizQuestions}
+                              onToggleQuestion={(questionId) => toggleQuestionActive(config.id, questionId)}
+                              onDeleteQuestion={(questionId) => deleteQuestion(config.id, questionId)}
                             />
                           </motion.div>
                         )}
@@ -618,6 +824,7 @@ const AdminPage = () => {
             </TabsContent>
 
             {/* === Onglet Paramètres du site === */}
+            {role === "administrateur" && (
             <TabsContent value="settings">
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mx-auto max-w-2xl">
                 <h1 className="font-heading text-2xl font-bold text-foreground mb-8">Paramètres du site</h1>
@@ -772,11 +979,79 @@ const AdminPage = () => {
                 </div>
               </motion.div>
             </TabsContent>
+            )}
           </Tabs>
         )}
       </main>
     </div>
   );
 };
+
+//begin mdu 23/02/2026
+async function addUser(user: RoleUser): Promise<RoleUser> {
+  const response = await fetch("/api/users", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(user),
+  });
+
+  if (!response.ok) {
+    throw new Error("Erreur API");
+  }
+
+  return response.json();
+}
+
+async function updateConfig(config: SiteConfig): Promise<SiteConfig> {
+  const newConfig : NewConfig = {
+    webhook_url : config.webhookUrl,
+    api_key : config.apiKey,
+    max_api_retries : config.maxApiRetries,
+    id : 1,
+  };
+  const response = await fetch("/api/config", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(newConfig),
+  });
+
+  if (!response.ok) {
+    throw new Error("Erreur API");
+  }
+
+  return response.json();
+}
+
+
+async function updateUser(user: RoleUser): Promise<RoleUser> {
+  const response = await fetch("/api/usersUpdate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(user),
+  });
+
+  if (!response.ok) {
+    throw new Error("Erreur API");
+  }
+
+  return response.json();
+}
+
+async function deleteUser(user: RoleUser){
+  const response = await fetch("/api/userDelete", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(user),
+  });
+
+  if (!response.ok) {
+    throw new Error("Erreur API");
+  }
+}
+
+
+
+//end mdu 23/02/2026
+
 
 export default AdminPage;

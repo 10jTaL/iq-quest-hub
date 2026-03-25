@@ -1,48 +1,98 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { mockQuizzes } from "@/data/mockQuizzes";
+import { QuizConfig } from "@/types/quiz"; // ✅ plus de mockQuizzes
 import QuizIntro from "@/components/QuizIntro";
 import QuizQuestion from "@/components/QuizQuestion";
 import QuizResults from "@/components/QuizResults";
 import QuizStats from "@/components/QuizStats";
 import { ArrowLeft, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/contexts/AuthContext";
-
-const isPrivilegedUser = (): boolean => {
-  try {
-    const stored = localStorage.getItem("authUser");
-    if (!stored) return false;
-    const user = JSON.parse(stored);
-    return user.role === "administrateur" || user.role === "maitre_du_jeu";
-  } catch {
-    return false;
-  }
-};
+import { useUser } from "@/contexts/UserContext";
+import { useOidc, useOidcAccessToken } from "@axa-fr/react-oidc"; 
 
 type Phase = "intro" | "questions" | "results";
 
 const QuizPage = () => {
+  const { logout } = useOidc();
+  const { accessTokenPayload } = useOidcAccessToken();
+  const email = accessTokenPayload?.upn ?? accessTokenPayload?.unique_name ?? accessTokenPayload?.email;
   const { slug } = useParams<{ slug: string }>();
-  const quiz = mockQuizzes.find((q) => q.slug === slug);
-
+  const [quiz, setQuiz] = useState<QuizConfig | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const { role } = useUser();
   const [phase, setPhase] = useState<Phase>("intro");
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [score, setScore] = useState(0);
   const [showStats, setShowStats] = useState(false);
-  const canViewStats = isPrivilegedUser();
+  const canViewStats = role === "administrateur" || role === "maitre_du_jeu";
+  const [previousResult, setPreviousResult] = useState<{
+    score: number;
+    total_questions: number;
+    percentage: number;
+    completed_at: string;
+  } | null>(null);
 
-  if (!quiz) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h1 className="mb-2 font-heading text-2xl font-bold text-foreground">Quiz introuvable</h1>
-          <Link to="/" className="text-primary hover:underline">Retour à l'accueil</Link>
-        </div>
+  const defaultResultMessages = [
+    { minScore: 0,  maxScore: 40,  title: "À renforcer",   message: "Continuez à vous former." },
+    { minScore: 41, maxScore: 70,  title: "Bon niveau",    message: "Vous avez de bonnes bases." },
+    { minScore: 71, maxScore: 100, title: "Excellent !",   message: "Bravo, vous maîtrisez le sujet !" },
+  ];
+  // Charger le résultat précédent
+  useEffect(() => {
+    if (!slug || !email) return;
+    fetch(`/api/participations/${slug}?email=${encodeURIComponent(email)}`)
+      .then(r => r.json())
+      .then(data => { if (data) setPreviousResult(data); });
+  }, [slug, email]);
+
+  // Sauvegarder quand le quiz est terminé
+  useEffect(() => {
+    if (phase !== 'results' || !email || !quiz) return;
+    fetch('/api/participations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        quiz_slug: slug,
+        score,
+        total_questions: quiz.questions.length,
+      })
+    });
+  }, [phase]);
+  useEffect(() => {
+    async function fetchQuiz() {
+      try {
+        const response = await fetch(`/api/quiz/${slug}`);
+        if (response.status === 404) { setNotFound(true); return; }
+        if (!response.ok) throw new Error("Erreur API");
+        const data: QuizConfig = await response.json();
+        setQuiz(data);
+      } catch (error) {
+        console.error("Erreur chargement quiz", error);
+        setNotFound(true);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    if (slug) fetchQuiz();
+  }, [slug]);
+
+  if (isLoading) return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-300 border-t-primary" />
+    </div>
+  );
+
+  if (notFound || !quiz) return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-center">
+        <h1 className="mb-2 font-heading text-2xl font-bold text-foreground">Quiz introuvable</h1>
+        <Link to="/" className="text-primary hover:underline">Retour à l'accueil</Link>
       </div>
-    );
-  }
+    </div>
+  );
 
   const handleStart = () => setPhase("questions");
 
@@ -62,6 +112,12 @@ const QuizPage = () => {
     setPhase("intro");
     setCurrentQuestion(0);
     setScore(0);
+    // Recharger le résultat précédent (qui vient d'être sauvegardé)
+    if (slug && email) {
+      fetch(`/api/participations/${slug}?email=${encodeURIComponent(email)}`)
+        .then(r => r.json())
+        .then(data => { if (data) setPreviousResult(data); });
+    }
   };
 
   return (
@@ -90,14 +146,25 @@ const QuizPage = () => {
       <main className="container py-16">
         <AnimatePresence mode="wait">
           {phase === "intro" && (
-            <QuizIntro
-              key="intro"
-              title={quiz.title}
-              introduction={quiz.introduction}
-              questionCount={quiz.questions.length}
-              icon={quiz.icon}
-              onStart={handleStart}
-            />
+            <div key="intro">  {/* ← key ajoutée */}
+              {previousResult && (
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700">
+                  🎯 Votre dernier résultat : <strong>{previousResult.score}/{previousResult.total_questions}</strong>
+                  {" "}({previousResult.percentage}%)
+                  <span className="ml-2 text-blue-400 text-xs">
+                    le {new Date(previousResult.completed_at).toLocaleDateString('fr-FR')}
+                  </span>
+                </div>
+              )}
+              <QuizIntro
+                key="intro"
+                title={quiz.title}
+                introduction={quiz.introduction}
+                questionCount={quiz.questions.length}
+                icon={quiz.icon}
+                onStart={handleStart}
+              />
+            </div>
           )}
           {phase === "questions" && (
             <QuizQuestion
@@ -114,7 +181,7 @@ const QuizPage = () => {
               key="results"
               score={score}
               totalQuestions={quiz.questions.length}
-              resultMessages={quiz.resultMessages}
+              resultMessages={quiz.resultMessages ?? defaultResultMessages}
               onRestart={handleRestart}
             />
           )}

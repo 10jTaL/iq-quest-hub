@@ -1,0 +1,28 @@
+networks:
+  iqnet: {}
+
+services:
+  quizzbackend:
+    build: ./src/mon-backend
+    container_name: quizzbackend
+    ports:
+      - "3000"
+    environment:
+      - NODE_ENV=development
+    networks:
+      - iqnet
+
+  quizzfrontend:
+    build: ../iq-quest-hub
+    container_name: quizzfrontend
+    ports:
+      - "8085:8085"
+    environment:
+      - SSL_KEY_PATH=C:/certs/key.pem
+      - SSL_CERT_PATH=C:/certs/cert.pem
+    volumes:
+      - "C:\\Certif:C:\\certs:ro"
+    depends_on:
+      - quizzbackend
+    networks:
+      - iqnet

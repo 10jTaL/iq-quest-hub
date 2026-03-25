@@ -1,14 +1,37 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import QuizCard from "@/components/QuizCard";
-import { mockQuizzes } from "@/data/mockQuizzes";
 import { Settings, LogOut } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useOidc, useOidcAccessToken  } from '@axa-fr/react-oidc';
 import { Button } from "@/components/ui/button";
+import { QuizConfig } from "@/types/quiz";
+import { useUser } from "@/contexts/UserContext";
 
 const Index = () => {
-  const { user, logout } = useAuth();
 
+  const { logout } = useOidc();
+  const { role } = useUser();
+  const isPrivileged = role === "administrateur" || role === "maitre_du_jeu";
+  //console.log(logout);
+  const [quizzes, setQuizzes] = useState<QuizConfig[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { accessTokenPayload } = useOidcAccessToken();
+  useEffect(() => {
+    async function fetchQuizzes() {
+      try {
+        const response = await fetch("/api/quiz");
+        if (!response.ok) throw new Error("Erreur API");
+        const data: QuizConfig[] = await response.json();
+        setQuizzes(data.filter(q => q.isActive && q.questions.some(question => question.isActive)));
+      } catch (error) {
+        console.error("Erreur chargement quiz", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchQuizzes();
+  }, []);
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -18,7 +41,8 @@ const Index = () => {
             QuizAI<span className="text-primary">.</span>
           </Link>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">{user?.name}</span>
+            <span className="text-sm text-muted-foreground">{accessTokenPayload?.email}</span>
+            {isPrivileged && (
             <Link
               to="/admin"
               className="flex items-center gap-2 rounded-full border border-border px-4 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:border-primary/30 transition-all"
@@ -26,6 +50,7 @@ const Index = () => {
               <Settings className="h-3.5 w-3.5" />
               Administration
             </Link>
+            )}
             <Button variant="ghost" size="icon" onClick={logout} className="h-9 w-9 text-muted-foreground hover:text-foreground">
               <LogOut className="h-4 w-4" />
             </Button>
@@ -52,9 +77,9 @@ const Index = () => {
       {/* Quiz Grid */}
       <section className="container pb-20">
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {mockQuizzes.map((quiz, i) => (
-            <QuizCard key={quiz.id} quiz={quiz} index={i} />
-          ))}
+          {quizzes.map((quiz, i) => (
+              <QuizCard key={quiz.id} quiz={quiz} index={i} />
+            ))}
         </div>
       </section>
     </div>

@@ -1,14 +1,36 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { mockParticipations, QuizParticipation } from "@/data/mockParticipations";
 import { BarChart3, Users, TrendingUp } from "lucide-react";
+
+interface Participation {
+  email: string;
+  score: number;
+  total_questions: number;
+  percentage: number;
+  completed_at: string;
+}
 
 interface QuizStatsProps {
   quizSlug: string;
 }
 
 const QuizStats = ({ quizSlug }: QuizStatsProps) => {
-  const participations = mockParticipations.filter((p) => p.quizSlug === quizSlug);
+  const [participations, setParticipations] = useState<Participation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/participations/${quizSlug}/all`)
+      .then(r => r.json())
+      .then(data => setParticipations(Array.isArray(data) ? data : []))
+      .finally(() => setIsLoading(false));
+  }, [quizSlug]);
+
+  if (isLoading) return (
+    <div className="flex justify-center py-8">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-primary" />
+    </div>
+  );
 
   if (participations.length === 0) {
     return (
@@ -20,8 +42,7 @@ const QuizStats = ({ quizSlug }: QuizStatsProps) => {
   }
 
   const averageScore =
-    participations.reduce((sum, p) => sum + (p.correctAnswers / p.totalQuestions) * 100, 0) /
-    participations.length;
+    participations.reduce((sum, p) => sum + p.percentage, 0) / participations.length;
 
   return (
     <motion.div
@@ -30,7 +51,6 @@ const QuizStats = ({ quizSlug }: QuizStatsProps) => {
       transition={{ duration: 0.4 }}
       className="space-y-6"
     >
-      {/* Summary cards */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
@@ -52,7 +72,6 @@ const QuizStats = ({ quizSlug }: QuizStatsProps) => {
         </div>
       </div>
 
-      {/* Participants table */}
       <div className="rounded-xl border border-border bg-card overflow-hidden">
         <div className="flex items-center gap-2 border-b border-border px-5 py-4">
           <BarChart3 className="h-5 w-5 text-primary" />
@@ -61,36 +80,29 @@ const QuizStats = ({ quizSlug }: QuizStatsProps) => {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nom</TableHead>
-              <TableHead className="text-center">Bonnes réponses</TableHead>
-              <TableHead className="text-center">Total questions</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead className="text-center">Score</TableHead>
+              <TableHead className="text-center">Total</TableHead>
+              <TableHead className="text-center">Pourcentage</TableHead>
+              <TableHead className="text-center">Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {participations.map((p) => {
-              const pct = Math.round((p.correctAnswers / p.totalQuestions) * 100);
-              return (
-                <TableRow key={p.id}>
-                  <TableCell className="font-medium text-foreground">{p.userName}</TableCell>
-                  <TableCell className="text-center">{p.correctAnswers}</TableCell>
-                  <TableCell className="text-center">{p.totalQuestions}</TableCell>
-                  <TableCell className="text-center">
-                    <span
-                      className={
-                        pct >= 70
-                          ? "font-semibold text-primary"
-                          : pct >= 40
-                          ? "text-foreground"
-                          : "text-destructive"
-                      }
-                    >
-                      {pct}%
-                    </span>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
+            {participations.map((p, i) => (
+              <TableRow key={i}>
+                <TableCell className="font-medium text-foreground">{p.email}</TableCell>
+                <TableCell className="text-center">{p.score}</TableCell>
+                <TableCell className="text-center">{p.total_questions}</TableCell>
+                <TableCell className="text-center">
+                  <span className={p.percentage >= 70 ? "font-semibold text-primary" : p.percentage >= 40 ? "text-foreground" : "text-destructive"}>
+                    {p.percentage}%
+                  </span>
+                </TableCell>
+                <TableCell className="text-center text-muted-foreground text-xs">
+                  {new Date(p.completed_at).toLocaleDateString('fr-FR')}
+                </TableCell>
+              </TableRow>
+            ))}
           </TableBody>
         </Table>
       </div>

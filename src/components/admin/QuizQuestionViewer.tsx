@@ -8,9 +8,11 @@ import { toast } from "sonner";
 interface QuizQuestionViewerProps {
   config: QuizConfig;
   onUpdate: (updated: QuizConfig) => void;
+  onToggleQuestion?: (questionId: string) => void;
+  onDeleteQuestion?: (questionId: string) => void;
 }
 
-const QuizQuestionViewer = ({ config, onUpdate }: QuizQuestionViewerProps) => {
+const QuizQuestionViewer = ({ config, onUpdate, onToggleQuestion, onDeleteQuestion }: QuizQuestionViewerProps) => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const toggleQuestionActive = (questionId: string) => {
@@ -21,6 +23,7 @@ const QuizQuestionViewer = ({ config, onUpdate }: QuizQuestionViewerProps) => {
       ),
     };
     onUpdate(updated);
+    onToggleQuestion?.(questionId);
     toast.success("Question mise à jour.");
   };
 
@@ -31,6 +34,7 @@ const QuizQuestionViewer = ({ config, onUpdate }: QuizQuestionViewerProps) => {
       questionCount: config.questions.filter((q) => q.id !== questionId).length,
     };
     onUpdate(updated);
+    onDeleteQuestion?.(questionId);
     toast.success("Question supprimée.");
   };
 

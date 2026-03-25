@@ -1,0 +1,15 @@
+services:
+  quizzbackend:
+    build: ./
+    container_name: quizzbackend
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - SSL_KEY_PATH=C:/certs/key.pem
+      - SSL_CERT_PATH=C:/certs/cert.pem
+    volumes:
+      - C:\Certif:C:\certs:ro
+    networks:
+    - iqnet

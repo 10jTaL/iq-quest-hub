@@ -1,9 +1,9 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Quiz } from "@/types/quiz";
+import { QuizConfig } from "@/types/quiz";
 
 interface QuizCardProps {
-  quiz: Quiz;
+  quiz: QuizConfig;
   index: number;
 }
 
@@ -17,7 +17,7 @@ const iconColorMap: Record<string, string> = {
 };
 
 const QuizCard = ({ quiz, index }: QuizCardProps) => {
-  const colorClass = iconColorMap[quiz.iconColor || "blue"] || iconColorMap.blue;
+  const colorClass = iconColorMap[quiz.iconColor ?? "blue"] ?? iconColorMap["blue"];
 
   return (
     <motion.div

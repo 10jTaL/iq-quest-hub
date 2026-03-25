@@ -1,73 +1,91 @@
-# Welcome to your Lovable project
+# IQ Quest Hub
 
-## Project info
+IQ Quest Hub is a modern, interactive Quiz platform built with React, Vite, and TypeScript. It features a robust authentication system using ADFS OIDC, a responsive UI built with Tailwind CSS and Shadcn UI, and distinct scopes for regular participants and administrators.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🚀 Tech Stack
 
-## How can I edit this code?
+- **Frontend Framework**: React 18, Vite
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS, Shadcn UI, Framer Motion
+- **Authentication**: `@axa-fr/react-oidc` (ADFS integration)
+- **Routing**: React Router DOM (`react-router-dom`)
+- **State Management & Data Fetching**: TanStack React Query (`@tanstack/react-query`)
+- **Forms & Validation**: React Hook Form, Zod
+- **Data Visualization**: Recharts, Embla Carousel
 
-There are several ways of editing your application.
+## 📁 Project Structure
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```text
+iq-quest-hub/
+├── src/
+│   ├── components/      # UI components (Shadcn UI, Admin components, Quiz specific views)
+│   ├── contexts/        # React Contexts (e.g., UserContext)
+│   ├── data/            # Static or mock data for quizzes
+│   ├── hooks/           # Custom React hooks
+│   ├── lib/             # Utility functions
+│   ├── mon-backend/     # Backend service/mock layer
+│   ├── pages/           # Application views (Index, AdminPage, QuizPage, LoginPage)
+│   ├── test/            # Test configurations and utilities
+│   ├── types/           # Global TypeScript interfaces and types
+│   ├── App.tsx          # Main application component & Routing definitions
+│   └── main.tsx         # React application entry point
+├── public/              # Static assets and OIDC service worker
+├── ...                  # Configuration files (vite.config.ts, tailwind.config.ts, etc.)
 ```
 
-**Edit a file directly in GitHub**
+## ✨ Key Features
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. **Secure Authentication**
+   - Seamless SSO authentication integrated with ADFS using `@axa-fr/react-oidc`.
+   - Protected routes using `<OidcSecure>` wrapper to ensure privacy.
 
-**Use GitHub Codespaces**
+2. **Quiz Management (Admin)**
+   - Dedicated `AdminPage` for managing quizzes.
+   - Real-time statistics and data visualization using Recharts for administrative oversight.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+3. **Interactive Quizzes**
+   - Immersive quiz-taking experience on the `QuizPage`.
+   - Dynamic UI with modular components like `QuizCard`, `QuizIntro`, `QuizQuestion`, and `QuizResults`.
 
-## What technologies are used for this project?
+## 🛠️ Getting Started
 
-This project is built with:
+### Prerequisites
+- Node.js (v18+) or Bun
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### Installation
 
-## How can I deploy this project?
+1. Navigate to the project directory:
+   ```bash
+   cd iq-quest-hub
+   ```
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+2. Install dependencies:
+   ```bash
+   npm install
+   # or with bun
+   bun install
+   ```
+   *(Note: The `postinstall` script will automatically copy the required OIDC service worker files to your `public` directory).*
 
-## Can I connect a custom domain to my Lovable project?
+### Running the Application
 
-Yes, you can!
+To start the development server:
+```bash
+npm run dev
+# or
+bun run dev
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+> **Note**: Authentication flows require running on specific domains/ports as registered in your ADFS configuration (e.g., the current redirect URI specifies `https://atl-svap21.cipeliagroup.com:8085`). Ensure your local development server is configured appropriately (using HTTPS plugin if needed) or test on the designated hosting environment.
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+### Available Scripts
+
+- `npm run dev` - Start the Vite development server.
+- `npm run build` - Compile the application for production.
+- `npm run lint` - Run ESLint to identify and fix code quality issues.
+- `npm run preview` - Preview the production build locally.
+- `npm run test` - Run automated tests using Vitest.
+- `npm run test:watch` - Run Vitest in watch mode.
+
+## 🔒 Authentication Configuration
+The authentication setup is centrally located in `src/App.tsx`. Make sure your `client_id`, `redirect_uri`, `client_secret`, and ADFS endpoints match your development and production environments correctly.
