@@ -10,7 +10,7 @@ services:
       - SSL_KEY_PATH=/certs/key.pem
       - SSL_CERT_PATH=/certs/cert.pem
     volumes:
-      - ./certs:/certs:ro
+      - /home/test/certs:/certs:ro
     networks:
       - iqnet
 

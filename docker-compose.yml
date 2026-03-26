@@ -23,7 +23,7 @@ services:
     ports:
       - "8085:8085"
     volumes:
-      - ./certs:/certs:ro   # chemin Linux de tes certs sur la VM
+      - /home/test/certs:/certs:ro  # chemin Linux de tes certs sur la VM
     depends_on:
       - quizzbackend
     networks:
