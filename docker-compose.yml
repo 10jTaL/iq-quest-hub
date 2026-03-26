@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
 
   quizzfrontend:
-    build: ./iq-quest-hub
+    build: ../iq-quest-hub
     container_name: quizzfrontend
     ports:
       - "8085:8085"
