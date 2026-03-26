@@ -39,8 +39,8 @@ async function bootstrap() {
 
   // plus tard : app.use("/api", userRoutes);
 
-  const keyPath = process.env.SSL_KEY_PATH || "C:/certs/key.pem";
-  const certPath = process.env.SSL_CERT_PATH || "C:/certs/cert.pem";
+  const keyPath = process.env.SSL_KEY_PATH || "~/certs/key.pem";
+  const certPath = process.env.SSL_CERT_PATH || "~/certs/cert.pem";
 
   const httpsOptions = {
     key: fs.readFileSync(keyPath),

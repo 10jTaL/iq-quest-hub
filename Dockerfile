@@ -1,26 +1,20 @@
-FROM mcr.microsoft.com/windows/servercore:ltsc2022
+# ─── Stage 1 : Build ───────────────────────────────────────
+FROM node:18-alpine AS builder
 
-SHELL ["cmd", "/S", "/C"]
-
-RUN powershell -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; \
-    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12; \
-    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
-
-RUN choco install -y nodejs-lts
-
-WORKDIR C:/app
+WORKDIR /app
 
 COPY package*.json ./
 RUN npm install
 
 COPY . .
-
-RUN if exist dist rmdir /S /Q dist
 RUN npm run build
+
+# ─── Stage 2 : Serve avec Nginx ────────────────────────────
+FROM nginx:alpine
+
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 8085
 
-ENV SSL_KEY_PATH=C:/certs/key.pem
-ENV SSL_CERT_PATH=C:/certs/cert.pem
-
-CMD ["C:\\Program Files\\nodejs\\node.exe", "server.js"]
+CMD ["nginx", "-g", "daemon off;"]
