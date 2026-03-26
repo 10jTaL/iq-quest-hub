@@ -7,8 +7,6 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - SSL_KEY_PATH=/certs/key.pem
-      - SSL_CERT_PATH=/certs/cert.pem
     volumes:
       - /home/test/certs:/certs:ro
     networks:

@@ -39,16 +39,20 @@ async function bootstrap() {
 
   // plus tard : app.use("/api", userRoutes);
 
-  const keyPath = process.env.SSL_KEY_PATH || "/home/test/key.pem";
-  const certPath = process.env.SSL_CERT_PATH || "/home/test/cert.pem";
-
-  const httpsOptions = {
-    key: fs.readFileSync(keyPath),
-    cert: fs.readFileSync(certPath),
-  };
-  const PORT = parseInt(process.env.PORT || "3000", 10);
+  /* const keyPath = process.env.SSL_KEY_PATH || "/home/test/key.pem";
+   const certPath = process.env.SSL_CERT_PATH || "/home/test/cert.pem";
+ 
+   const httpsOptions = {
+     key: fs.readFileSync(keyPath),
+     cert: fs.readFileSync(certPath),
+   };*/
+  /*const PORT = parseInt(process.env.PORT || "3000", 10);
   https.createServer(httpsOptions, app).listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on https://0.0.0.0:${PORT}`);
+  });*/
+  const PORT = parseInt(process.env.PORT || "3000", 10);
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
   });
   // 5. Démarrage du serveur
   /*const PORT = process.env.PORT || 3000;
