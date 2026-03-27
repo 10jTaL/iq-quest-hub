@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { OidcProvider, OidcSecure } from "@axa-fr/react-oidc"; 
+import { OidcProvider, OidcSecure } from "@axa-fr/react-oidc";
 import { UserProvider } from "./contexts/UserContext";
 import Index from "./pages/Index";
 import QuizPage from "./pages/QuizPage";
@@ -16,7 +16,7 @@ const queryClient = new QueryClient();
 const Authenticating = () => null;
 const oidcConfig = {
   client_id: "43b65083-3b3d-4876-b1a1-d83581c8d06f",
-  redirect_uri: "https://atl-svap21.cipeliagroup.com:8085/authentication/callback",
+  redirect_uri: "https://10.104.0.33:8085/authentication/callback",
   //silent_redirect_uri: window.location.origin + "/authentication/silent-callback",
   client_secret: "EUwrzAJXJ_Y0cxnq8fmtVKXLc3x3v_kyLHMtffYH",
   scope: "openid email profile allatclaims groups",
