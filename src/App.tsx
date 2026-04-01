@@ -16,7 +16,7 @@ const queryClient = new QueryClient();
 const Authenticating = () => null;
 const oidcConfig = {
   client_id: "43b65083-3b3d-4876-b1a1-d83581c8d06f",
-  redirect_uri: "https://10.104.0.33:8085/authentication/callback",
+  redirect_uri: "https://10.104.0.35:8085/authentication/callback",
   //silent_redirect_uri: window.location.origin + "/authentication/silent-callback",
   client_secret: "EUwrzAJXJ_Y0cxnq8fmtVKXLc3x3v_kyLHMtffYH",
   scope: "openid email profile allatclaims groups",
