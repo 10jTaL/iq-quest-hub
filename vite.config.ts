@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
     }
   },
   server: {
-    host: "atl-svap21.cipeliagroup.com",
+    host: "atl-quiz.cipeliagroup.com",
     port: 8085,
     https: {
       key: fs.readFileSync("./src/key.pem"),
@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => ({
     },
     hmr: {
       protocol: "wss",
-      host: "atl-svap21.cipeliagroup.com",
+      host: "atl-quiz.cipeliagroup.com",
       port: 8085,
     },
     proxy: {
@@ -41,7 +41,7 @@ export default defineConfig(({ mode }) => ({
       }
     },
     cors: {
-      origin: "https://atl-svap21.cipeliagroup.com:8085",
+      origin: "https://atl-quiz.cipeliagroup.com:8085",
       credentials: true,
     }
   },
